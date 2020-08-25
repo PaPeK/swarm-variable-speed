@@ -28,7 +28,7 @@ import AnimateRun
 def main():
     # Input Parameters
     #########################################
-    dockerName = 'gcc_docker' # alternatively 'gcc_docker' or None see README.md for usage (Docker-alternative)
+    dockerName = None # alternatively 'gcc_docker' or None see README.md for usage (Docker-alternative)
 
     pred_time = 200
     record_time = 60
@@ -37,7 +37,7 @@ def main():
     dic = swarmPy.get_base_params(pred_time, record_time)
     # changes from base-parameters
     dic['pava_sig'] = 0.1 # default 0.075
-    dic['N'] = 600  # default 400
+    dic['alg_strength'] = 3 # the order-disorder transition is at alg_strength=0.83
 
     # Generate and Run Command
     #########################################

@@ -64,6 +64,13 @@ make
 
 in the terminal in the directory of this repository.
 
+#### Possible compilation problem
+
+If you are using anaconda and h5py is installed the linking to the libhdf5-serial-dev library might not work.
+A simple work around is to comment in your `~/.bashrc` (or `~/.shrc` or `~/.zshrc` depending on the shell you are using) the anaconda initialization.
+Than you start a new terminal and retry the compilation (run `make`).
+If the compilation was succesfull you can uncomment the anaconda initialization again and run the python-scripts.
+
 ### Docker-alternative
 
 run in the directory of this repository (assuming you followed the instructions above and called the docker image "gcc_docker" )
@@ -87,6 +94,10 @@ python RunSingle.py
 RunSingle.py will also call a visualization of the simulations by calling:
 
 - AnimateRun.py - animating the results using pythons matplotlib
+
+### Docker-alternative
+
+Remember to change in "RunSingle.py" the line `dockerName = None` to `dockerName = 'gcc_docker'` (or the docker-name you have chosen)
 
 ## User Agreement
 
