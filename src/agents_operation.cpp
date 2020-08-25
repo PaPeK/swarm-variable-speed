@@ -386,48 +386,6 @@ std::vector<int> GetPredKnn(std::vector<particle> &a, params *ptrSP, predator *p
 }
 
 
-void find_NN2set(std::vector<particle> &a, predator *pred){
-    // finds all 2nd NN of predator
-    unsigned int ii;
-    std::set<unsigned int> Nset;
-    std::set<unsigned int>::iterator it;
-
-    pred->NN2set.clear();
-
-    for (it=pred->NNset.begin(); it!=pred->NNset.end(); ++it){
-        ii = *it;
-        std::copy(a[ii].NN.begin(), a[ii].NN.end(),
-                  std::inserter(Nset, Nset.end()));
-    }
-
-    // set minus: Nset - pred->NNset = NN2set:
-    std::set_difference(Nset.begin(), Nset.end(), pred->NNset.begin(),
-                        pred->NNset.end(), std::inserter(pred->NN2set, pred->NN2set.begin()));
-}
-
-
-double AreaConvexHull(std::vector<particle> &a, std::vector<int> &nodes){
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-    typedef K::Point_2 Point_2;
-    typedef CGAL::Polygon_2<K> Polygon_2;
-    int ii;
-    Point_2 points[nodes.size()];
-    Point_2 convhull[nodes.size()];
-    for (unsigned int i=0; i<nodes.size(); i++){
-            ii = nodes[i];
-            points[i] = Point_2(a[ii].x[0], a[ii].x[1]);
-    }
-    Point_2 *ptr = CGAL::convex_hull_2( points, points+nodes.size(), convhull);
-
-    // create a polygon and put some points in it
-    Polygon_2 p;
-    for (int i=0; i<ptr-convhull; i++)
-      p.push_back(convhull[i]);
-
-    double Area = p.area();
-    return Area;
-}
-
 std::vector< CGAL::Exact_predicates_inexact_constructions_kernel::Segment_2 >
         AlphaShapeSegments(std::vector<CGAL::Exact_predicates_inexact_constructions_kernel::Point_2> &points,
                            double r){
@@ -561,31 +519,6 @@ double DistP2AlphaShape(std::vector<particle> &a, predator *pred,
     return dist;
 }
 
-double get_elongation(std::vector<particle> &a, std::vector<double> &dir, std::vector<int> &nodes){
-    std::vector<double> p_dir(2, 0); // defines perpendicular direction
-    double len = vec_length(dir);
-    std::vector<double> cdir = dir;
-    cdir[0] /= len;
-    cdir[1] /= len;
-    p_dir[0] = cdir[1];
-    p_dir[1] = -cdir[0];
-    double min, max, p_min, p_max, dist, p_dist;
-    int ii = 0;
-    min = p_min = std::numeric_limits<double>::max();
-    max = p_max = std::numeric_limits<double>::lowest();
-    dist = p_dist = 0;
-    for(int i=0; i<nodes.size(); i++){
-        ii = nodes[i];
-        dist = a[ii].x[0] * cdir[0] + a[ii].x[1] * cdir[1];
-        p_dist = a[ii].x[0] * p_dir[0] + a[ii].x[1] * p_dir[1];
-        min = fmin(min, dist);
-        max = fmax(max, dist);
-        p_min = fmin(p_min, p_dist);
-        p_max = fmax(p_max, p_dist);
-    }
-    double elongation = (max - min) / (p_max - p_min);
-    return fabs(elongation);
-}
 
 template <class O, class I>
 std::vector<O> GetPredFrontPrey(std::vector<particle> &a, params *ptrSP, predator *pred, std::vector<I> &nodes)

@@ -37,7 +37,6 @@ def get_base_params(pred_time, record_time, trans_time=None):
     params["time"] = pred_time + record_time + trans_time    # total time of simulation
     params["dt"] = 0.02
     params["output"] = .2
-    params["output_mode"] = 1 # 0:mean, 1:full, 2:no-output AND no-dummies (only pava_out)
     # Initial Conditions
     # IC    0:v-dis,x-dis-box, 1:v-order, x-dis, 2:v-order, x-dis-box
     #       3:v-order, x-dis-circ  4: v-milling, x-cricle  5:v-dis, x-circle
@@ -136,7 +135,6 @@ def dic2swarmdyn_command(dic):
     command += ' -l %s' % dic['path']
     command += ' -E %s' % dic['fileID']
     command += ' -J %d' % dic['out_h5']
-    command += ' -m %d' % dic['output_mode']
     command += ' -d %g' % dic['dt']
     command += ' -o %g' % dic['output']
     # simulation

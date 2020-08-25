@@ -22,40 +22,6 @@
 #include "input_output.h"
 
 
-void WritePosVelPlus(std::vector<particle> &a, std::vector<double> plus,
-                     params* ptrSP, std::string name, bool append){
-    std::ios_base::openmode mode;
-    if (name == "")
-        name = "posvelplus";
-    if (append)
-        mode = std::ios_base::app;
-    else
-        mode = std::ios_base::out;
-    std::ofstream outFile((ptrSP->location + name + ".dat").c_str(),
-                          mode);
-    unsigned int id = 0;
-    for(unsigned int i=0; i < a.size(); i++){
-        while (id < a[i].id){
-            outFile << 0 << " " << 0 << " "
-                    << 0 << " " << 0 << " "
-                    << 0 << std::endl;
-            id++;
-        }
-        outFile << a[i].x[0] << " " << a[i].x[1] << " "
-                << a[i].v[0] << " " << a[i].v[1] << " " 
-                << plus[i] << std::endl;
-        id++;
-    }
-    // to assure the output has always same length
-    for(unsigned int i=id; i < ptrSP->N; i++){
-        outFile << 0 << " " << 0 << " "
-                << 0 << " " << 0 << " "
-                << 0 << std::endl;
-    }
-
-    outFile << std::endl;
-}
-
 void WritePosVel(std::vector<particle> &a, params* ptrSP,
                  std::string name, bool append){
     std::ios_base::openmode mode;
@@ -73,38 +39,6 @@ void WritePosVel(std::vector<particle> &a, params* ptrSP,
     outFile << std::endl;
 }
 
-
-void WritePosVelDead(std::vector<particle> &a, params &SP, std::string name, predator &pred){
-    std::ios_base::openmode mode;
-    if (name == "")
-        name = "pos_vel_dead_";
-    std::ofstream outFile((SP.location + name + SP.fileID
-                           + ".dat").c_str(), std::ios::app);
-    unsigned int id = 0;
-    for(int i=0; i<a.size(); i++){
-        while (id < a[i].id){
-            outFile << 0 << " " << 0 << " "
-                    << 0 << " " << 0 << " "
-                    << 0 << std::endl;
-            id++;
-        }
-        outFile << a[i].x[0] << " " << a[i].x[1] << " "
-                << a[i].v[0] << " " << a[i].v[1] << " "
-                << int(a[i].dead) << std::endl;
-        id++;
-    }
-    // to ensure that there are always same Nr of rows
-    for(int i=id; i<SP.N; i++){
-        outFile << 0 << " " << 0 << " "
-                << 0 << " " << 0 << " "
-                << 0 << std::endl;
-    }
-    // write predator values:
-    outFile << pred.x[0] << " " << pred.x[1] << " "
-            << pred.v[0] << " " << pred.v[1] << " "
-            << 0 << std::endl;
-    outFile << std::endl;
-}
 
 char* getCmdOption(char ** begin, char ** end, const std::string & option){
     char ** itr = std::find(begin, end, option);
@@ -142,7 +76,6 @@ void ParseParameters(int argc, char **argv, params *SysParams)
     SysParams->rep_steepness = atof(getCmdOption(argv, argv+argc, "-Y"));
     SysParams->speed0 = atof(getCmdOption(argv, argv+argc, "-s"));
     SysParams->pred_attack = atoi(getCmdOption(argv, argv+argc, "-c"));
-    SysParams->output_mode = atoi(getCmdOption(argv, argv+argc, "-m"));
     SysParams->cludist = atof(getCmdOption(argv, argv+argc, "-C"));
     SysParams->kill_range = atof(getCmdOption(argv, argv+argc, "-G"));
     SysParams->pred_angle_noise = atof(getCmdOption(argv, argv+argc, "-z"));
@@ -184,7 +117,6 @@ void OutputParameters(params SysParams)
     fprintf(fp,"pred_radius:        \t%g\n",SysParams.pred_radius);
     fprintf(fp,"pred_speed0:        \t%g\n",SysParams.pred_speed0);
 
-    fprintf(fp,"output_mode:        \t%d\n",SysParams.output_mode);
     fprintf(fp,"pred_attack:        \t%d\n",SysParams.pred_attack);
     fprintf(fp,"output:             \t%g\n",SysParams.output);
     fprintf(fp,"BC:                 \t%d\n",SysParams.BC);

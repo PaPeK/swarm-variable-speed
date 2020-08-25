@@ -71,39 +71,6 @@ void Step(int s, std::vector<particle> &a, params *, std::vector<predator> &pred
 void Output(int s, std::vector<particle> &a, params &SP, std::vector<predator> &pred,
             std::vector<particle> &d, std::vector<predator> &predD, bool forceSave=false);
 void ErrorOutput(std::vector<particle> &a, int err, params *ptrSP, predator *pred);
-std::vector<double> Out_swarm(std::vector<particle> &a, params &SP);
-std::vector<double> Out_swarm_pred(std::vector<particle> &a, predator &pred, params &SP);
-void Out_end_Save(std::vector<particle> &a, std::string name, params &SP);
-void Out_End_PosVel(std::vector<particle> &a, predator &P, std::string name, params &SP);
-void Out_start_Save(std::vector<particle> &a, std::string name, params &SP);
-void Out_startPred_Save(std::vector<predator> &p, std::string name, params &SP);
-void DataCreateSaveWrite(std::vector< std::vector<double> > &data,
-                     std::vector<double> &out, params &SP,
-                     std::string name, bool forceSave=false);
-// fctns. for collecting means
-template<class T>
-std::vector<double> basic_particle_averages(std::vector<particle> &a, std::vector<T> &nodes);
-template<class T>
-double get_avg_pred_dist(std::vector<particle> &a,
-                         std::vector<T> &nodes, predator &pred,
-                         params &SP);
-template<class T>
-double get_avg_deg(std::vector<particle> &a, std::vector<T> &nodes);
-void Write_out(std::vector<double> &out, params &SP,
-               std::vector<hsize_t> & vec_dim,
-               H5::DataSet *h5dset, std::string name);
-std::vector<double> corr_velFlucTS_interact(std::vector<particle> &a,
-                                            std::vector<double> &mean_v,
-                                            std::vector<unsigned int> Fnn,
-                                            std::vector<unsigned int> Fnn2);
-std::vector<double> corr_velFluc_interact(std::vector<particle> &a,
-                                          std::vector<double> &mean_v,
-                                          std::vector<unsigned int> Fnn,
-                                          std::vector<unsigned int> Fnn2);
-double corr_velFlucDirection_interact_all(std::vector<particle> &a,
-                                          std::vector<double> &mean_v);
-double corr_velFluc_interact_all(std::vector<particle> &a,
-                                 std::vector<double> &mean_v);
 // will be initialized for particle and predator
 template<class part>
 void WriteParticles(std::vector<part> &a, params &SP, 

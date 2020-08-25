@@ -67,10 +67,7 @@ std::vector<int> GetPredCircleSeg(std::vector<particle> &, params *, predator *,
 std::vector<int> GetPredCircleSeg(std::vector<particle> &a, params *ptrSP, predator *pred, 
                                   double radius, double angle, std::vector<int> &nodes);
 // finds 2NN of F which see P (saved in pred->NN2set)
-void find_NN2set(std::vector<particle> &a, predator *pred);
-double AreaConvexHull(std::vector<particle> &a, std::vector<int> &nodes); // computes area
 double DistP2AlphaShape(std::vector<particle> &a, predator *pred, params *);
-double get_elongation(std::vector<particle> &a, std::vector<double> &dir, std::vector<int> &nodes);
 void split_dead(std::vector<particle> &a, std::vector<particle> &d, std::vector<predator> &preds);
 void split_notInCluster(std::vector<particle> &a, std::vector<particle> &d,
                         std::vector<int> &cluster, std::vector<predator> &preds);

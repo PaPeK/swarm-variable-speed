@@ -121,10 +121,6 @@ struct params{
     int sim_steps;          // auxiliary var. - total number of integration steps int(sim_time/dt)
     int step_output;        // auxiliary var. - integrations steps between outputs int(output/dt)
 
-    int output_mode;        // switch for output data (full, mean)
-    bool out_extend;        // derived from output_mode
-    bool out_mean;          // derived from output_mode
-    bool out_particle;      // derived from output_mode
     bool out_dummy;         // derived from Npred
     int out_h5;             // switch for ouput data format (txt, HDF5)
     unsigned int outstep;       // current output step (needed for hdf5)
@@ -139,15 +135,6 @@ struct params{
     double kill_rate;        // kills per second if prob_selected = 1 and prob_catch = 1
     double kill_range;       // distance between pred and prey at which prob_kill > 0
     double predcirclerad;       // radius of circle arond predator = 3*kill_range(for fct. GetPredPreyCircle )
-
-    // output-arrays
-    std::vector< std::vector<double> > dataOutMean;
-    std::vector< std::vector<double> > dataOutSwarm;
-    std::vector< std::vector<double> > dataOutSwarmPred;
-    std::vector< std::vector<double> > dataOutSwarmPredD;
-    std::vector< std::vector<double> > dataOutPred;
-    std::vector< std::vector<double> > dataOutPredD;
-    std::vector< std::vector<double> > dataOutEnd;
 };
 typedef struct params params;
 

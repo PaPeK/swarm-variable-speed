@@ -57,10 +57,6 @@ void SetCoreParameters(params* SP)
     SP->pred_attack=0;
     SP->pred_kill=0;
     SP->stopAtKill=false;
-    SP->output_mode=1;
-    SP->out_extend = false;
-    SP->out_mean = true;
-    SP->out_particle = true;
     SP->out_dummy = true;
 
     SP->step_output=1;
@@ -132,30 +128,6 @@ void InitSystemParameters(params* SP)
     SP->out_dummy = false;
     if (SP->Npred > 0)
         SP->out_dummy = true;
-    SP->out_extend = false;
-    if (SP->fileID != "xx")
-        SP->out_extend = true;
-    if (SP->output_mode == 0){
-        SP->out_mean = true;
-        SP->out_particle = false;
-    }
-    else if (SP->output_mode == 1){
-        SP->out_mean = true;
-        SP->out_particle = true;
-    }
-    else{   // output_mode == 2
-        SP->out_mean = false;
-        SP->out_particle = false;
-        SP->out_dummy = false;
-    }
-    if (SP->total_outstep == 0){
-        SP->out_mean = false;
-        SP->out_particle = false;
-        SP->out_dummy = false;
-    }
-    if (SP->total_outstep_pred == 0){
-        SP->out_dummy = false;
-    }
 }
 
 void InitPredator(std::vector<predator> &preds){

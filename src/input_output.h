@@ -37,10 +37,7 @@ void OutputParameters(params SysParams);
 void LoadCoordinatesCPP(params * ptrSP, std::string name, std::vector<particle> &a);
 void LoadCoordinates(params * ptrSP, const char *fn, std::vector<particle> &a, int N, double sizeL);
 void LoadVector(params * ptrSP, std::string name, std::vector<double> &vec);
-void WritePosVelPlus(std::vector<particle> &a, std::vector<double> plus,
-                     params* ptrSP, std::string name, bool append);
 void WritePosVel(std::vector<particle> &a, params* ptrSP, std::string name, bool append=true);
-void WritePosVelDead(std::vector<particle> &a, params &SP, std::string name, predator &pred);
 template<class T>
 void WriteVector(std::string file, std::vector<T> &vec, bool append=true);
 template<class T>
