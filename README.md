@@ -101,7 +101,7 @@ Remember to change in "RunSingle.py" the line `dockerName = None` to `dockerName
 
 ## User Agreement
 
-By downloading SDE_burst_coast you agree with the following points: SDE_burst_coast is provided without any warranty or conditions of any kind. We assume no responsibility for errors or omissions in the results and interpretations following from application of SDE_burst_coast.
+By downloading PredatorPrey you agree with the following points: PredatorPrey is provided without any warranty or conditions of any kind. We assume no responsibility for errors or omissions in the results and interpretations following from application of PredatorPrey.
 
 ## License
 
