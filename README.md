@@ -1,5 +1,6 @@
 # PredatorPrey – simulation code for agent-based predator-prey interactions
-Version 0.1 described and applied in <https://www.arxiv.org/content/??????MISSING??????>
+Version 0.1 described and applied in <http://arxiv.org/abs/2009.02079>
+
 
 (Python-wrapper package calling c++ running)
 
@@ -10,7 +11,7 @@ Version 0.1 described and applied in <https://www.arxiv.org/content/??????MISSIN
 PredatorPrey is a C++ code which runs numerical simulations of the agent based stochastic differential equations.
 The motivation of this code are group living animals, e.g. fish shoals in shallow water(2 dimensions).
 In principle the code can be easily extended to three dimensions. However, the higher the dimension the smaller the volume if the number of agents stays constant.
-For a full mathematical description of the stochastic differential equations and the social forces (repulsion, attraction and alignment) see <https://www.arxiv.org/content/??????MISSING??????>. 
+For a full mathematical description of the stochastic differential equations and the social forces (repulsion, attraction and alignment) see <http://arxiv.org/abs/2009.02079>. 
 
 ## Required C++ libraries:
 
