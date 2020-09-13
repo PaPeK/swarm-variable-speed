@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
 import matplotlib
+if __name__ == '__main__':
+    matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import h5py

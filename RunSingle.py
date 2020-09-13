@@ -22,6 +22,9 @@
 '''
 import os
 import time as pytime
+import matplotlib
+if __name__ == '__main__':
+    matplotlib.use('TkAgg')
 import SwarmDynByPy as swarmPy
 import AnimateRun
 
