@@ -55,12 +55,6 @@ int main(int argc, char **argv){
                         SysPara.fileID + ".in");
     double dt = SysPara.dt;
 
-    std::vector<predator>  preds(SysPara.Npred);
-    InitPredator(preds);
-    // Create Dummies:
-    std::vector<predator> predsD = preds;         // predator who hunts for dummy
-    std::vector<particle> dummy = agent;    // dummy particles or prey (not seeing Predator)
-
     unsigned int maxiter = 3;
     unsigned int iter = 0;
     std::vector<int> best_clu;
@@ -79,8 +73,6 @@ int main(int argc, char **argv){
         t1= clock();
         for(s=sstart; s < SysPara.sim_steps; s++){
             // define some basic time-flags
-            bool time_pred = (s >= static_cast<int>(SysPara.pred_time/dt));
-            bool time_predAppears = (s == static_cast<int>(SysPara.pred_time/dt));
             bool time_output = (s >= static_cast<int>(SysPara.trans_time/dt));
             bool time_1stoutput = (s == static_cast<int>(SysPara.trans_time/dt));
             // only simulate largest cluster if recording starts or predator appears:

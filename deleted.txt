@@ -1,0 +1,10 @@
+swarmdyn.cpp:
+InitPredator(preds);
+preds
+predsD
+SysPara.Npred
+dead
+dummy
+
+time_pred
+time_predAppears
