@@ -99,7 +99,6 @@ void InitSystem(std::vector<particle> &a, params SP)
         a[i].vproj=SP.speed0;
         a[i].counter_rep=0;
         a[i].id = i;
-        a[i].alg_strength = SP.alg_strength;
     }
 }
 

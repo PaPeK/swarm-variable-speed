@@ -41,8 +41,6 @@ struct particle{
     // counters of interaction partners - important only for local metric coupling (not global)
     int counter_rep;        // counter repulsion partners 
     // parameter-variations in between the agents
-    double alg_strength;
-    double rep_steepness;
     std::vector<double> out(void);  // for output
 };
 typedef struct particle particle;
@@ -85,6 +83,7 @@ struct params{
     double cludist;         // criterion for max. particle dist. in cluster
     unsigned int Sclu; // # of particles in largest cluster
     unsigned int MinCluster;    // # of particles necessary, otherwise repeat 
+    double beta;            // relaxation rate of velocity along heading
 };
 typedef struct params params;
 

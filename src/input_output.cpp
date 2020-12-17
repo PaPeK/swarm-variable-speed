@@ -56,6 +56,7 @@ void ParseParameters(int argc, char **argv, params *SysParams)
     SysParams->location = getCmdOption(argv, argv+argc, "-l");
     SysParams->N = atoi(getCmdOption(argv, argv+argc, "-N"));
     SysParams->Dphi = atof(getCmdOption(argv, argv+argc, "-D"));
+    SysParams->beta = atof(getCmdOption(argv, argv+argc, "-b"));
     SysParams->dt = atof(getCmdOption(argv, argv+argc, "-d"));
     SysParams->sim_time = atof(getCmdOption(argv, argv+argc, "-t"));
     SysParams->output = atof(getCmdOption(argv, argv+argc, "-o"));
@@ -93,6 +94,7 @@ void OutputParameters(params SysParams)
     fprintf(fp,"trans_time:         \t%g\n",SysParams.trans_time);
     fprintf(fp,"Dp:                 \t%g\n",SysParams.Dphi);
     fprintf(fp,"speed0:             \t%g\n",SysParams.speed0);
+    fprintf(fp,"beta:               \t%g\n",SysParams.beta);
     fprintf(fp,"rep_range:          \t%g\n",SysParams.rep_range);
     fprintf(fp,"rep_strength:       \t%g\n",SysParams.rep_strength);
     fprintf(fp,"alg_strength:       \t%g\n",SysParams.alg_strength);
@@ -252,20 +254,3 @@ template
 void WriteVector2d(std::string file, std::vector< std::vector<int> > &vec, bool append);
 template
 void WriteVector2d(std::string file, std::vector< std::vector<unsigned int> > &vec, bool append);
-
-
-void pava_load_set_paras(std::vector<particle> &a, std::string in_name){
-    std::ifstream inputFile((in_name).c_str());
-    unsigned int ii = 0;
-    if (inputFile){
-        double value;
-        while ( inputFile >> value && ii < a.size()) {
-            a[ii].alg_strength = value;
-            // if ( inputFile >> value ) a[ii].att_strength = value;
-            ii++;
-        }
-        if ( inputFile >> value )
-            std::cout<< "!!!ATTENTION!!! more parameters to read, but stopped" << std::endl;
-    }
-    std::cout<< "loaded " << ii << "agent paras, ";
-}

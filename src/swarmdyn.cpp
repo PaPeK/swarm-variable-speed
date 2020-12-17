@@ -49,8 +49,6 @@ int main(int argc, char **argv){
     InitRNG();
     ResetSystem(agent, &SysPara, false, r);
     LoadCoordinatesCPP(&SysPara, "init_posvel_" + SysPara.fileID, agent);
-    pava_load_set_paras(agent, SysPara.location + "pava_in_" +
-                        SysPara.fileID + ".in");
     double dt = SysPara.dt;
 
     unsigned int maxiter = 3;
@@ -103,8 +101,6 @@ int main(int argc, char **argv){
             sstart = 0;
             LoadCoordinatesCPP(&SysPara, "init_posvel_"
                                + SysPara.fileID, agent);
-            pava_load_set_paras(agent, SysPara.location + "pava_in_" +
-                            SysPara.fileID + ".in");
         }
         // if no run Sclu<MinCluster -> use one with largest cluster
         if (iter == maxiter - 1 && SysPara.Sclu < SysPara.MinCluster){

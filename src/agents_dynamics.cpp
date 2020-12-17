@@ -20,7 +20,7 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     double lphi = 0.0;
     int BC = ptrSP->BC;
     double sizeL = ptrSP->sizeL;
-    double alg_strength = a.alg_strength;
+    double alg_strength = ptrSP->alg_strength;
     double speed0 = ptrSP->speed0;
 
     // Calc total social force
