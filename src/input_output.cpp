@@ -51,7 +51,7 @@ char* getCmdOption(char ** begin, char ** end, const std::string & option){
 void ParseParameters(int argc, char **argv, params *SysParams)
 {
     // Function for parsing the parameters from command line
-    // free short option arguments: y, Z
+    // free short option arguments: y, Z, O, G, x, n, e, p, P, S, f, c, z, F
     SysParams->sizeL = atof(getCmdOption(argv, argv+argc, "-L"));
     SysParams->location = getCmdOption(argv, argv+argc, "-l");
     SysParams->N = atoi(getCmdOption(argv, argv+argc, "-N"));

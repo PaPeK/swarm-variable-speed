@@ -218,20 +218,15 @@ def main(mode):
     fps = 15
     dpi = 200
     sizePrey = 1/8
-    sizePred = sizePrey * 2
     name = 'Animation'
     cmap = plt.get_cmap('coolwarm') # alternatives 'bwr', 'Reds'
     folder = Path.cwd()
-    
 
     # # Load data 
     f_h5 = folder / 'out_xx.h5'
     if f_h5.exists:
         with h5py.File(f_h5) as fh5:
             preys = datCollector( np.array(fh5['/part']) )
-            preds = datCollector( np.array(fh5['/pred']) )
-            preysD = datCollector( np.array(fh5['/partD']) )
-            predsD = datCollector( np.array(fh5['/predD']) )
     else:
         print('{} does not EXIST'.format(f_h5))
     pava_in_name = folder / 'pava_in_xx.in'
@@ -240,23 +235,18 @@ def main(mode):
         pavas = np.loadtxt(str(pava_in_name))
         colors = pavas2colors(pavas)
     # get info from files
-    time, N, _ = preys.pos.shape 
-    timePred, Npred, _ = preds.pos.shape
-    t0pred = time - timePred # predator can appear later
-    
-    
+    time, N, _ = preys.pos.shape
+
     # # Animation 
     f, ax = plt.subplots(1)
     ax.axis('off')
     ax.set_aspect('equal')
     # Collect update-tasks
     tasks = taskCollector()
-    positions = [preys.pos, preds.pos]
+    positions = [preys.pos]
     tasks.append( Limits4Pos(positions, ax) )
     tasks.append( headAndTail(preys, sizePrey, colors, ax,
                               tail_length, cmap=cmap) )
-    tasks.append( headAndTail(preds, sizePred, 'r', ax, tail_length, 
-                              scatter=False, delay=t0pred) )
     # animation
     interval = 1000*(1/fps)
     anim = animation.FuncAnimation(f, tasks.update, interval=interval,

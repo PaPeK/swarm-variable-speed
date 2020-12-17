@@ -70,15 +70,13 @@ int main(int argc, char **argv){
             bool time_1stoutput = (s == static_cast<int>(SysPara.trans_time/dt));
             // compute the largest cluster:
             if (time_1stoutput){
-                std::vector<int> largestCluster = GetLargestCluster(a, ptrSP);
+                std::vector<int> largestCluster = GetLargestCluster(agent, &SysPara);
                 SysPara.Sclu = largestCluster.size();
             }
             // Perform a single step
             Step(s, agent, &SysPara);
-            }
-
             // Data output
-            if(s%SysPara.step_output==0 && time_output)
+            if((s % SysPara.step_output == 0) and time_output)
             {
                 // RESTART-CONDITIONS unless maxiteration reached -> take the best run:
                 if (SysPara.outstep == 0 && iter < maxiter - 1){

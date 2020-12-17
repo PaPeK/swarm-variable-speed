@@ -1,6 +1,6 @@
 '''
     RunSingle
-    Start a simulation of the agent-based predator prey  model by launching cpp-code 'swarmdyn'
+    Start a simulation of the agent-based model by launching cpp-code 'swarmdyn'
     with the here defined parameters.
     Also visualizes the simulation by calling the script "AnimateRun.py".
     v0.1, 13.5.2020
@@ -33,18 +33,16 @@ def main():
     #########################################
     dockerName = None # alternatively 'gcc_docker' or None see README.md for usage (Docker-alternative)
 
-    pred_time = 200
+    trans_time = 50 # 200
     record_time = 60
 
     dic = dict()
-    dic = swarmPy.get_base_params(pred_time, record_time)
+    dic = swarmPy.get_base_params(record_time, trans_time=trans_time)
     # changes from base-parameters
-    dic['pava_sig'] = 0.1 # default 0.075
-    dic['alg_strength'] = 3 # the order-disorder transition is at alg_strength=0.83
+    dic['alg_strength'] = 1 # the order-disorder transition is at alg_strength=0.83
 
     # Generate and Run Command
     #########################################
-    pavas = swarmPy.heteroPopulation(dic) # to change heterogeneity: modify dic['pava_sig']
     swarmPy.solve_parameter_dependencies(dic)
     command = swarmPy.dic2swarmdyn_command(dic)
     print(command)

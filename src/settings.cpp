@@ -71,7 +71,6 @@ void InitSystemParameters(params* SP)
         SP->trans_time = SP->sim_time - SP->output;
     if(SP->trans_time < 0)
         SP->trans_time = 0;
-    }
 
     // if BC not periodic -> set systemsize laarge
     if (SP->BC < 0)

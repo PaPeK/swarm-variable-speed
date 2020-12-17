@@ -251,5 +251,3 @@ void Boundary(agent &a, double sizeL,  int BC)
 
 template
 void Boundary(particle &a, double sizeL,  int BC);
-template
-void Boundary(predator &a, double sizeL,  int BC);
