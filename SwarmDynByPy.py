@@ -52,6 +52,7 @@ def get_base_params(record_time, trans_time=None):
     # #################### F behavior
     params["Dphi"] = 0.5    # angular noise (= variance/2) --> Pi^2/4=2.5 is very large
     params["speed0"] = 1.0
+    params["beta"] = 4
     params["rep_range"] = 1
     params["rep_strength"] = 2.0 # 20. (voro)
     params["rep_steepness"] = -2    # for rep_range = 1 steepness should be between [-4, -2]
@@ -126,5 +127,6 @@ def dic2swarmdyn_command(dic):
     command += ' -H %g' % dic['rep_strength']
     command += ' -A %g' % dic['alg_strength']
     command += ' -D %g' % dic['Dphi']
+    command += ' -b %g' % dic['beta']
     command += ' -s %g' % dic['speed0']
     return command

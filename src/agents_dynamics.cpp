@@ -21,6 +21,7 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     int BC = ptrSP->BC;
     double sizeL = ptrSP->sizeL;
     double alg_strength = ptrSP->alg_strength;
+    double beta = ptrSP->beta;
     double speed0 = ptrSP->speed0;
 
     // Calc total social force
@@ -34,13 +35,19 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     
     // Calculate polar angle
     lphi = a.phi;
+    double vproj = a.vproj;     // to use correct time-step
+    forcev = force[0] * cos(lphi) + force[1] * sin(lphi);
+    a.vproj += (beta * (speed0 - a.vproj) + forcev) * dt;
+    // a.vproj += rnv;     // rnv = sqrt(dt * Dv) * N(0, 1) TODO: should we have speed noise?
+    if (a.vproj < 0)     // prevents F of swimming back
+        a.vproj = 0;    // angle adapted below to exactly the force direction
 
     forcep =- force[0] * sin(lphi) + force[1] * cos(lphi);
 
-    if (a.vproj != 0)
+    if (a.vproj != 0) // TODO: should be True also for small vproj (otherwise angle overshoot) -> what is small (depends on dt and force strength)
         lphi += ( forcep * dt + rnp) / a.vproj;  // rnp = sqrt(dt * Dphi) * N(0, 1) (Wiener Process) 
     else
-        lphi =  atan2(force[1], force[0]); // instantaneous direction adaption
+        lphi = atan2(force[1], force[0]); // instantaneous direction adaption
     lphi = fmod(lphi, 2*M_PI);
     lphi = fmod(2*M_PI + lphi, 2*M_PI);   // to ensure positive angle definition
     a.phi = lphi;
@@ -48,7 +55,7 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     a.u[1] = sin(lphi);
     
     // Move particles with speed in units of [vel.al. range. / time]
-    a.v = vec_mul(a.u, speed0);
+    a.v = vec_mul(a.u, a.vproj);
     a.x[0] += a.v[0]*dt;
     a.x[1] += a.v[1]*dt;
     
