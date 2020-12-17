@@ -39,25 +39,9 @@ void SetCoreParameters(params* SP)
 
     SP->alg_strength=0.0;
 
-    SP->Npred=1;
-    SP->Ndead=0;
-    SP->flee_strength=3;
-    SP->pred_strength=3;
-    SP->pred_time=SP->sim_time - 50.0;
-    SP->pred_angle=0.0;
-    SP->pred_radius=10.0;
-    SP->pred_speed0=2.0;
-    SP->pred_memo_av.assign(2, 0.);
-    SP->pred_memo_t = 1.;
-    SP->pred_angle_noise = 0.;
-
     SP->output=1.0;
     SP->BC=-1;
     SP->IC=0;
-    SP->pred_attack=0;
-    SP->pred_kill=0;
-    SP->stopAtKill=false;
-    SP->out_dummy = true;
 
     SP->step_output=1;
     SP->trans_time=0.0;
@@ -65,15 +49,10 @@ void SetCoreParameters(params* SP)
     SP->cludist = 5;   
     SP->Sclu = 0;
     SP->MinCluster = 1;
-    SP->kill_rate = 1;
-    SP->kill_range = 6;
-    SP->predcirclerad = 18;
-    SP->pred_time = 1;
     SP->location = "./";
     SP->fileID = "xx";
     SP->out_h5 = 1;
     SP->outstep = 0;
-    SP->outstep_pred = 0;
 }
 
 void InitSystemParameters(params* SP)
@@ -92,21 +71,7 @@ void InitSystemParameters(params* SP)
         SP->trans_time = SP->sim_time - SP->output;
     if(SP->trans_time < 0)
         SP->trans_time = 0;
-    // if predator created after simulation -> never created 
-    if((SP->pred_time >= SP->sim_time) || (SP->pred_time < 0))
-        SP->Npred = 0;
-    // if no predator change time -> never created
-    if(SP->Npred == 0)
-        SP->pred_time = SP->sim_time + SP->pred_memo_t + 1;
-    // if pred_time-pred_memo_t is negative -> unable to create memory:
-    if (SP->pred_time - SP->pred_memo_t < 0)
-        SP->pred_memo_t = 0;
-    // pred_kill
-    if (SP->pred_kill >= 10){
-        SP->pred_kill -= 10;
-        SP->stopAtKill = true;
     }
-    SP->predcirclerad = 3 * SP->kill_range;
 
     // if BC not periodic -> set systemsize laarge
     if (SP->BC < 0)
@@ -118,39 +83,8 @@ void InitSystemParameters(params* SP)
                         (0 == fmod(SP->trans_time / SP->dt / SP->step_output, 1));   // out starts at s<=trans_time/dt
     if (SP->total_outstep < 0)
         SP->total_outstep = 0;
-    SP->total_outstep_pred = SP->total_outstep;
-    if (SP->pred_time > SP->sim_time)
-        SP->total_outstep_pred = 0;
-    else if (SP->pred_time > SP->trans_time)
-        SP->total_outstep_pred = (int)((SP->sim_steps - 1) / SP->step_output) - 
-                                 (int)((int)(SP->pred_time / SP->dt) / SP->step_output) +
-                                 (int)(0 == fmod(SP->pred_time / SP->dt / SP->step_output, 1));  // out start at s<=trans_time/dt
-    SP->out_dummy = false;
-    if (SP->Npred > 0)
-        SP->out_dummy = true;
 }
 
-void InitPredator(std::vector<predator> &preds){
-    unsigned int i;
-    // Set arrays to default values
-    for(i=0; i<preds.size(); i++){
-        preds[i].id = i;
-        preds[i].x.assign(2, 1.);
-        preds[i].v.assign(2, 1.);
-        preds[i].u.assign(2, 1.);
-        preds[i].vproj = 0;
-        preds[i].phi = 1;
-        preds[i].phi_start = 1;
-        preds[i].state = 0;
-        preds[i].kills = 0;
-        preds[i].cluster.resize(0);
-        preds[i].NN.resize(0);
-        preds[i].NNset.empty();
-        preds[i].NN2set.empty();
-        preds[i].NN3set.empty();
-        preds[i].beforeCOM = true;
-    }
-}
 
 void InitSystem(std::vector<particle> &a, params SP)
 {
@@ -163,13 +97,8 @@ void InitSystem(std::vector<particle> &a, params SP)
         a[i].force.assign(2, 0.);
         a[i].force_rep.assign(2, 0.);
         a[i].force_alg.assign(2, 0.);
-        a[i].force_flee.assign(2, 0.);
-        a[i].fitness = 0.0;
-        a[i].fit_decrease = 0.0;
-        a[i].dead = false;
         a[i].vproj=SP.speed0;
         a[i].counter_rep=0;
-        a[i].counter_flee=0;
         a[i].id = i;
         a[i].alg_strength = SP.alg_strength;
     }

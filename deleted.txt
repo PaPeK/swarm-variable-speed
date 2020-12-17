@@ -1,10 +1,27 @@
-swarmdyn.cpp:
-InitPredator(preds);
-preds
-predsD
-SysPara.Npred
-dead
-dummy
+Input_Output.CPP:
+!!!!!useless Func Calls:
 
-time_pred
-time_predAppears
+!!!!!Func with bad arguments or options:
+
+!!!!!useless Func Definitions:
+
+!!!!!useless parameter passed from python:
+"-O"));
+"-G"));
+"-x"));
+"-n"));
+"-e"));
+"-p"));
+"-P"));
+"-S"));
+"-f"));
+"-c"));
+"-z"));
+"-F"));
+
+ 
+WORDS: kill, pred, dead, dummy, attack, flee, fit, memo, split
+
+TODOS:
+agnts.h : id -> only needed for split.... and data saving?
+

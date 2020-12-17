@@ -43,6 +43,5 @@ void WriteVector(std::string file, std::vector<T> &vec, bool append=true);
 template<class T>
 void WriteVector2d(std::string file, std::vector< std::vector<T> > &vec, bool append=true);
 void pava_load_set_paras(std::vector<particle> &a, std::string in_name);
-void pava_output(std::vector<particle> &a, std::vector<int> &cluster, std::string out_name);
 
 #endif

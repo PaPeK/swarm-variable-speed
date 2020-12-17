@@ -74,89 +74,6 @@ void InteractionVoronoiF2F(std::vector<particle> &a, params *ptrSP)
 }
 
 
-void InteractionVoronoiF2FP(std::vector<particle> &a, params *ptrSP, std::vector<predator> &preds, bool dummy)
-{
-    // calculates local voronoi interactions
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel         K;
-    typedef CGAL::Triangulation_vertex_base_with_info_2<int, K>         Vb;
-    typedef CGAL::Triangulation_data_structure_2<Vb>                    Tds;
-    typedef CGAL::Delaunay_triangulation_2<K, Tds>                      Delaunay;
-    typedef Delaunay::Vertex_handle                                     Vertex_handle;
-    typedef Delaunay::Edge_iterator                                     Edge_iterator;
-    typedef Delaunay::Point                                             Point;
-    typedef std::pair<Point, int>                                       PPoint;
-
-    int N = a.size();
-    int nonPred = 0;
-    int predId = -1;
-
-    // create the delaunay triangulation network
-    std::vector< std::pair<Point, int> > Vr;   // stores the point location and index
-    std::vector< std::pair< std::vector<double>, int > > posId;
-    Vr.reserve(4 * ( N + preds.size() ) );
-    posId.reserve(4 * ( N + preds.size() ) );
-    for(int i=0; i<N; i++){
-        Point p1(a[i].x[0], a[i].x[1]);
-        PPoint p2 = std::make_pair(p1, i);  // prey labeled with corresponding index
-        Vr.push_back(p2);
-        makePairAndPushBack(posId, a[i].x, i);
-    }
-    for (int i=0; i<preds.size(); i++){
-        Point p1(preds[i].x[0], preds[i].x[1]);
-        PPoint p2 = std::make_pair(p1, predId);     // predator labeled with negative index
-        Vr.push_back(p2);
-        makePairAndPushBack(posId, preds[i].x, predId);
-        predId--;
-    }
-    // produce replicate prey/predator for periodic BC
-    if (!ptrSP->BC){
-        std::vector< std::pair< std::vector<double>, int > > newPosId = 
-            GetCopies4PeriodicBC( posId, ptrSP->sizeL );
-        for(int i=0; i<newPosId.size(); i++){
-            Point p1(newPosId[i].first[0], newPosId[i].first[1]);
-            PPoint p2 = std::make_pair(p1, newPosId[i].second);
-            Vr.push_back(p2);
-        }
-    }
-
-    Delaunay t;
-    t.insert(Vr.begin(),Vr.end());
-
-    //iterates over all finite edges and apply interaction 
-    //  (infinite edges connect the infinite vertex with the vertices of the complex hull)
-    for(Edge_iterator ei=t.finite_edges_begin(); ei!=t.finite_edges_end(); ei++){
-        // Get a vertex from the edge, edge is stored as pair of the neighboring face and the vertex opposite to it
-        Delaunay::Face& f = *(ei->first);
-        int i = ei->second;
-        Vertex_handle vi = f.vertex(f.cw(i));             // cw = clockwise rotation in face starting at vertex i
-        Vertex_handle vj = f.vertex(f.ccw(i));            // ccw = counter clockwise .....
-        if ((vi->info() >= 0) && (vj->info() >= 0)){      // both F
-          IntCalcPrey(a, vi->info(), vj->info(), ptrSP, true);
-        }
-        else if ((vi->info() < 0) && (vj->info() < 0))      // both P
-            continue;
-        else {                              // one P one F
-            if (vi->info() < 0){             // i=P
-                nonPred = vj->info();
-                predId = vi->info();
-            }
-            else{                            // j=P
-                nonPred = vi->info();
-                predId = vj->info();
-            }
-            predId = - ( predId + 1 ); // -1 -> 0, -2 -> 1, ...
-            preds[predId].NN.push_back(nonPred);    // P sees
-            if (!dummy)
-                IntCalcPred(a, nonPred, preds[predId], ptrSP);
-            else preds[predId].NNset.insert(nonPred);     // to get dummy NN of P
-        }
-    }
-    // P only considers F in front as prey
-    for (int i=0; i<preds.size(); i++)
-        preds[i].NN = GetPredFrontPrey<unsigned int>(a, ptrSP, &preds[i], preds[i].NN);
-}
-
-
 void InteractionGlobal(std::vector<particle> &a, params *ptrSP)
 {
     // Simple brute force algorithm for global interactions
@@ -169,19 +86,6 @@ void InteractionGlobal(std::vector<particle> &a, params *ptrSP)
             IntCalcPrey(a, i, j, ptrSP, true);
 }
 
-
-void InteractionPredGlobal(std::vector<particle> &a, params *ptrSP, std::vector<predator> &preds)
-{
-    // Simple brute force algorithm for global interactions /w predator only
-    // checking all the N combinations
-    int N = a.size();
-    int i, j;
-
-    for(i=0;i<N;i++){
-        for(j=0;j<N;j++)
-            IntCalcPred(a, i, preds[j], ptrSP);
-    }
-}
 
 void IntCalcPrey(std::vector<particle> &a, int i, int j, params *ptrSP, bool symm)
 {
@@ -220,16 +124,4 @@ void IntCalcPrey(std::vector<particle> &a, int i, int j, params *ptrSP, bool sym
         vec_add221(a[j].force_rep, f0);
         vec_add221(a[j].force_alg, f1);
     }
-}
-
-
-void IntCalcPred(std::vector<particle> &a, int i, predator &pred, params *ptrSP){
-    // Function updating social forces for predator and a single prey
-    //////////////////
-    // Calc relative distance vector and corresponding unit vector
-    std::vector<double> r_ip(2);
-    r_ip = CalcDistVec(pred.x, a[i].x, ptrSP->BC, ptrSP->sizeL);
-    a[i].force_flee = vec_set_mag(r_ip, 1);
-    a[i].counter_flee++;
-    pred.NNset.insert(i);
 }

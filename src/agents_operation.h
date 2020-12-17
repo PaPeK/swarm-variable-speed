@@ -57,29 +57,12 @@ void GetCenterOfMass(std::vector<particle> &, params *,
                      bool revise=false, unsigned int rev_time=1, double quantile=0.9); // gives the center of mass of cluster
 std::vector<int> GetLargestCluster(std::vector<particle> &, params *); //finds indices of largest cluster
 std::vector<int> GetPreyCluster(std::vector<particle> &a, params *ptrSP, unsigned int id); //finds indices of cluster where prey "id" is in
-std::vector<unsigned int> GetPredVoronoiNN(std::vector<particle> &, params *, 
-                 predator *,  std::vector<int> &nodes);   // returns prey indices which are voronoi nn to pred of prey in nodes
-std::vector<int> GetPredKnn(std::vector<particle> &, params *, predator *,
-                 unsigned int K, std::vector<int> &nodes);  // returns vector of indices to K nn of pred of prey in nodes
-std::vector<int> GetPredCircleSeg(std::vector<particle> &, params *, predator *,
-                 std::vector<int> &nodes); // vector of indices of prey in circle segment in front of pred of prey in nodes
-//finds indices of Prey in circle around Predator:
-std::vector<int> GetPredCircleSeg(std::vector<particle> &a, params *ptrSP, predator *pred, 
-                                  double radius, double angle, std::vector<int> &nodes);
-// finds 2NN of F which see P (saved in pred->NN2set)
-double DistP2AlphaShape(std::vector<particle> &a, predator *pred, params *);
-void split_dead(std::vector<particle> &a, std::vector<particle> &d, std::vector<predator> &preds);
-void split_notInCluster(std::vector<particle> &a, std::vector<particle> &d,
-                        std::vector<int> &cluster, std::vector<predator> &preds);
-void merge_dead(std::vector<particle> &a, std::vector<particle> &d);
 std::vector< CGAL::Exact_predicates_inexact_constructions_kernel::Segment_2 >
         AlphaShapeSegments(std::vector<CGAL::Exact_predicates_inexact_constructions_kernel::Point_2> &points,
                            double r);
 std::vector<double> Dist2AlphaShape(std::vector<particle> &a,
                         params *ptrSP);
 // returns indicese of Prey(in "nodes") in front of Pred
-template <class O, class I>
-std::vector<O> GetPredFrontPrey(std::vector<particle> &a, params *ptrSP, predator *pred, std::vector<I> &nodes);
 void makePairAndPushBack(std::vector< std::pair< std::vector<double>, int > > &vecpair,
                          std::vector<double> &vec, int id);
 std::vector< std::pair< std::vector<double>, int > > GetCopies4PeriodicBC(

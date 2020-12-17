@@ -38,6 +38,8 @@
 #include "geometry.h"
 #include "fov.h"
 // for CGAL functionality:
+// TODO: NN Stuff needed if no KNN-interation implemented?
+// TODO: convex hyll needed?
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/algorithm.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -56,17 +58,9 @@
 // INTERACTION COMPUTATION-------------------------------------------
 // voronoi: fish-fish
 void InteractionVoronoiF2F(std::vector<particle> &a, params *);
-// voronoi: fish-fish, fish-pred
-void InteractionVoronoiF2FP(std::vector<particle> &, params *,
-        std::vector<predator> &, bool dummy = false);
 // global: fish-fish
 void InteractionGlobal(std::vector<particle> &, params *);
-// global: fish-fish, fish-pred
-void InteractionPredGlobal(std::vector<particle> &, params *,
-        std::vector<predator> &);
 // fish-fish:
 void IntCalcPrey(std::vector<particle> &, int, int, params *, bool symm);
-// fish-pred:
-void IntCalcPred(std::vector<particle> &, int, predator &, params *);
 
 #endif

@@ -65,12 +65,9 @@
 
 // FUNCTION DEFINITION
 void InitRNG();             // initializes the random number generation
-void Step(int s, std::vector<particle> &a, params *, std::vector<predator> &preds,
-          bool dummy=false);      // numerical step
+void Step(int s, std::vector<particle> &a, params *);      // numerical step
 // fctns. for Output:
-void Output(int s, std::vector<particle> &a, params &SP, std::vector<predator> &pred,
-            std::vector<particle> &d, std::vector<predator> &predD, bool forceSave=false);
-void ErrorOutput(std::vector<particle> &a, int err, params *ptrSP, predator *pred);
+void Output(int s, std::vector<particle> &a, params &SP);
 // will be initialized for particle and predator
 template<class part>
 void WriteParticles(std::vector<part> &a, params &SP, 

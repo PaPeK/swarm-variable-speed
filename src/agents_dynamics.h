@@ -33,22 +33,7 @@
 #include <math.h>
 #include <random>       // std::default_random_engine
 
-std::vector<double> Prob_hit(std::vector<double> predNNdists, double kill_range);
-std::vector<double> Prob_selected(std::vector<particle> &a,
-                                  std::vector<double> &predNNdists,
-                                  predator *pred,
-                                  params * ptrSP);
-std::vector<double> Prob_selected_OLD(std::vector<particle> &a,
-                                  predator *pred,
-                                  params * ptrSP);
-void Fitness(std::vector<particle> &a, predator *pred, params * ptrSP,
-                      double kill_range, gsl_rng *r);
 void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp);
 template<class agent>
 void Boundary(agent &a, double sizeL,  int BC);             // calculate boundary conditions
-void MovePredator(params *ptrSP, predator *pred, std::vector<particle> &a, unsigned int s);
-void MoveBlindPredator(predator &pred, params *ptrSP, gsl_rng *r);
-void CreatePredator(std::vector<particle> &a, params *, predator &);        // creates predator; is called at time pred_time
-void CreateBlindPredator(std::vector<particle> &a, params *ptrSP,
-                         predator &pred);
 #endif

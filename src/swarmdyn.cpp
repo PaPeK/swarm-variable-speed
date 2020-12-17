@@ -45,8 +45,6 @@ int main(int argc, char **argv){
 
     // initialize agents and set initial conditions
     std::vector<particle> agent(SysPara.N);    // particles or prey
-    std::vector<particle> agent_dead(0);
-    std::vector<particle> dummy_dead(0);
     InitSystem(agent, SysPara);
     InitRNG();
     ResetSystem(agent, &SysPara, false, r);
@@ -57,17 +55,12 @@ int main(int argc, char **argv){
 
     unsigned int maxiter = 3;
     unsigned int iter = 0;
-    std::vector<int> best_clu;
     std::vector<int> fnn;
     unsigned int bestSclu = 0;
     int sstart = 0;
-    std::vector<predator> predsave;
     std::vector<particle> agentsave;
-    std::vector<double> memosave;
     double t1 = clock(), t2 = 0.; // time variables for measuring comp. time
     std::cout<< std::endl;
-    unsigned int Ndead_before = 0;
-    bool pred_state_was0 = false; // necessary because break-condition only checked during output
     while (SysPara.Sclu < SysPara.MinCluster && iter < maxiter){
         // Perform numerical integrate
         t1= clock();
@@ -75,38 +68,14 @@ int main(int argc, char **argv){
             // define some basic time-flags
             bool time_output = (s >= static_cast<int>(SysPara.trans_time/dt));
             bool time_1stoutput = (s == static_cast<int>(SysPara.trans_time/dt));
-            // only simulate largest cluster if recording starts or predator appears:
-            if (time_1stoutput && SysPara.cluster_attacked.size() == 0){
-                SysPara.cluster_attacked = GetLargestCluster(agent, &SysPara);
-                SysPara.Sclu = SysPara.cluster_attacked.size();
+            // compute the largest cluster:
+            if (time_1stoutput){
+                std::vector<int> largestCluster = GetLargestCluster(a, ptrSP);
+                SysPara.Sclu = largestCluster.size();
             }
-            // EITHER at 1.st output OR at predator apprearence (not at both occasions)
-            if (time_predAppears || time_1stoutput)
-                if (SysPara.Npred > 0 && agent_dead.size() == 0) // ensures no re-split
-                    split_notInCluster(agent, agent_dead, SysPara.cluster_attacked, preds);
-            if (time_predAppears){
-                // CREATE PREDATOR
-                if ( preds.size() == 1 )
-                    CreatePredator(agent, &SysPara, preds[0]);
-                // copy Fs and P to dummies
-                if (SysPara.out_dummy){
-                    dummy = agent;
-                    dummy_dead = agent_dead;
-                    predsD = preds;
-                }
-            }
-            Ndead_before = SysPara.Ndead;
             // Perform a single step
-            // first split: output handles agents who are dead but
-            //  NN of non-dead agents (also imporant for NN2)
-            split_dead(agent, agent_dead, preds);
-            Step(s, agent, &SysPara, preds);
-            if (time_pred && SysPara.out_dummy){
-                split_dead(dummy, dummy_dead, predsD);
-                Step(s, dummy, &SysPara, predsD, true);
+            Step(s, agent, &SysPara);
             }
-            if (time_pred && SysPara.outstep > 10 && preds[0].state == 0)
-                pred_state_was0 = true;
 
             // Data output
             if(s%SysPara.step_output==0 && time_output)
@@ -115,50 +84,16 @@ int main(int argc, char **argv){
                 if (SysPara.outstep == 0 && iter < maxiter - 1){
                     // if S(Cluster) < MinCluster
                     if (SysPara.Sclu < SysPara.MinCluster){
-                        merge_dead(agent, agent_dead);
                         if (SysPara.Sclu > bestSclu){
-                            memosave = SysPara.pred_memo_av;
                             agentsave = agent;
-                            predsave = preds;
-                            best_clu = SysPara.cluster_attacked;
                             bestSclu = SysPara.Sclu;
                         }
                         SysPara.Sclu = 0;
                         break;
                     }
                 }
-                // BREAK AND REPEAT conditions
-                if ( time_pred && ( preds.size() == 1 ) ){
-                    // if "undesired" Output happend -> unvalid run (Sclu=0) -> repeat
-                    // TODO: break conditions only if preds.size() == 1
-                    predator pred = preds[0];   // designed for preds.size() == 1
-                    if (time_predAppears){
-                        fnn = GetPredFrontPrey<int>(agent, &SysPara, &pred, pred.cluster);
-                        if (fnn.size() == 0){
-                            std::cout<< "no prey in FRONT!!!!" << std::endl;
-                            ErrorOutput(agent, 1, &SysPara, &pred);
-                            SysPara.Sclu = 0;
-                            merge_dead(agent, agent_dead);
-                            iter--; // iteration only counted for Sclu < MinCluster criterion
-                            break;
-                        }
-                    }
-                    // Break-condition dependent on predator-movement-scheme
-                    bool breakAtReturn = false;
-                    if (fmod(SysPara.pred_attack, 10) < 2 && !breakAtReturn)
-                        breakAtReturn = (pred_state_was0 && SysPara.outstep > 10);
-                        // if pred_com < 2 it moves always straight after it passed the com
-                        //      -> therfore no turning and therefore stops if no prey in front
-                    // run break procedure (write output and break)
-                    if ((SysPara.stopAtKill && SysPara.Ndead >= 1) || breakAtReturn){
-                        Output(s, agent, SysPara, preds, dummy, predsD, true);
-                        break;
-                    }
-                }
-                Output(s, agent, SysPara, preds, dummy, predsD);
+                Output(s, agent, SysPara);
                 SysPara.outstep += 1;
-                if (time_pred)
-                    SysPara.outstep_pred += 1;
             }
         }
         iter++;
@@ -167,7 +102,6 @@ int main(int argc, char **argv){
             InitSystem(agent, SysPara);
             ResetSystem(agent, &SysPara, false, r);
             SysPara.outstep = 0;
-            SysPara.outstep_pred = 0;
             sstart = 0;
             LoadCoordinatesCPP(&SysPara, "init_posvel_"
                                + SysPara.fileID, agent);
@@ -177,20 +111,11 @@ int main(int argc, char **argv){
         // if no run Sclu<MinCluster -> use one with largest cluster
         if (iter == maxiter - 1 && SysPara.Sclu < SysPara.MinCluster){
             agent = agentsave;
-            dummy = agentsave;
-            preds = predsave;
-            predsD = predsave;
-            SysPara.pred_memo_av = memosave;
             SysPara.Sclu = bestSclu;
-            SysPara.cluster_attacked = best_clu;
-            if (SysPara.Npred > 0)
-                split_notInCluster(agent, agent_dead, SysPara.cluster_attacked, preds);
             // go back exactly where it stopped
             std::vector<double> eddi = Dist2AlphaShape(agent, &SysPara);
-            Output(s, agent, SysPara, preds, dummy, predsD);
+            Output(s, agent, SysPara);
             SysPara.outstep += 1;
-            if ((s >= static_cast<int>(SysPara.pred_time/dt)))
-                SysPara.outstep_pred += 1;
             sstart = static_cast<int>(SysPara.trans_time/dt) + 1;
         }
     }
@@ -198,11 +123,8 @@ int main(int argc, char **argv){
               << " MinCluster: "<< SysPara.MinCluster << "\n"; 
     // if minimum output generated -> assumes equilibration run
     // -> save final positions velocities
-    merge_dead(agent, agent_dead);
     if (SysPara.outstep == 1)
         WritePosVel(agent, &SysPara, "final_posvel_" + SysPara.fileID, false);
-    pava_output(agent, SysPara.cluster_attacked,
-                SysPara.location + "pava_out_" + SysPara.fileID + ".dat");
     return 0;
 }
 
@@ -250,7 +172,7 @@ void InitRNG(){
     gsl_rng_set(r, seed);
 }
 
-void Step(int s, std::vector<particle> &a, params* ptrSP, std::vector<predator> &preds, bool dummy)
+void Step(int s, std::vector<particle> &a, params* ptrSP)
 {
     // function for performing a single (Euler) integration step
     int i = 0;
@@ -264,49 +186,12 @@ void Step(int s, std::vector<particle> &a, params* ptrSP, std::vector<predator> 
     unsigned int j;
     int ii;
 
-    // CREATE PREDATOR MEMORY //////////////////////////////
-    // Start of memory: estimate largest cluster for hunt
-    if (s >= static_cast<int>((ptrSP->pred_time - ptrSP->pred_memo_t)/dt) &&
-        s-1 < static_cast<int>((ptrSP->pred_time - ptrSP->pred_memo_t)/dt)){
-        ptrSP->cluster_attacked = GetLargestCluster(a, ptrSP);
-        ptrSP->Sclu = ptrSP->cluster_attacked.size();
-        for (j=0; j<preds.size(); j++)
-            preds[j].cluster = ptrSP->cluster_attacked;
-    }
-    // during memory: average velocity of swarm
-    // ATTENTION: "s < ptrSP->pred_time/dt" is important because "s-1 <ptrSP->pred_time/dt"
-    //      will cause segmentation fault if cluster_attacked.size<N
-    //          REASON: accessing particles via indices in once saved cluster_attacked
-    //                  but indices are different at time1st_output -> split_dead function applied
-    if (s >= static_cast<int>((ptrSP->pred_time - ptrSP->pred_memo_t)/dt) && 
-        s < static_cast<int>(ptrSP->pred_time/dt)){
-        double avvelx = 0;                 // Average x velocity of particles
-        double avvely = 0;                 // Average y velocity of particles
-        for (j = 0; j < ptrSP->cluster_attacked.size(); j++)
-        {
-            ii = ptrSP->cluster_attacked[j];
-            avvelx += a[ii].v[0];
-            avvely += a[ii].v[1];
-        }
-        avvelx /= ptrSP->cluster_attacked.size();
-        avvely /= ptrSP->cluster_attacked.size();
-        ptrSP->pred_memo_av[0] += avvelx;
-        ptrSP->pred_memo_av[1] += avvely;
-    }
     // Reset simulation-step specific values to default
     for (i=0; i<N; i++)
         a[i].NN.resize(0);
-    for (i=0; i<preds.size(); i++){
-        preds[i].NNset.clear();
-        preds[i].NN.resize(0);
-    }
+    InteractionVoronoiF2F(a, ptrSP);
 
-    if (s < ptrSP->pred_time/dt)
-        InteractionVoronoiF2F(a, ptrSP);
-    else
-        InteractionVoronoiF2FP(a, ptrSP, preds, dummy); // has build in pred->voronoinn computation
-
-    // Update all agents AND dummy-agents (with same noise)
+    // Update all agents
     for(i=0;i<N;i++)
     {
         // Generate noise
@@ -314,62 +199,12 @@ void Step(int s, std::vector<particle> &a, params* ptrSP, std::vector<predator> 
         bool var_speed = false;
         MoveParticle(a[i], ptrSP, r, rnp);
     }
-    // PREDATOR RELATED STUFF(P-move, Fitness, .... )
-    if (s>=ptrSP->pred_time/dt){
-        std::vector<int> allprey(N);
-        std::iota (std::begin(allprey), std::end(allprey), 0); //Fill with 0, 1,...N
-        std::vector<unsigned int> ui_vec;   // indices of F considered  by P(noticed by interaction and in front)
-        // UPDATE P and initialize min, max
-        for (i=0; i<N; i++)
-            a[i].fit_decrease = 0;
-        for (i=0; i<preds.size(); i++){
-            // OVERWRITE pred->NN (already computed in Interaction BUT predator and agents did move!)
-            ui_vec = GetPredVoronoiNN(a, ptrSP, &preds[i], allprey);
-            preds[i].NN = GetPredFrontPrey<unsigned int, unsigned int>(a, ptrSP, &preds[i], ui_vec);
-            Fitness(a, &preds[i], ptrSP, ptrSP->kill_range, r);
-            MovePredator(ptrSP, &preds[i], a, s);
-        }
-    }
 }
 
 
-void Output(int s, std::vector<particle> &a, params &SP, std::vector<predator> &preds,
-            std::vector<particle> &d, std::vector<predator> &predsD, bool forceSave){
-    std::vector<double> out;
-
-    if (s < SP.pred_time / SP.dt){
-        WriteParticles<particle>(a, SP, "part", SP.outstep, SP.N);
-    }
-    else{
-        WriteParticles<particle>(a, SP, "part", SP.outstep, SP.N);
-        WriteParticles<predator>(preds, SP, "pred", SP.outstep_pred, SP.Npred);
-        if (SP.out_dummy){
-            WriteParticles<particle>(d, SP, "partD", SP.outstep_pred, SP.N);
-            WriteParticles<predator>(predsD, SP, "predD", SP.outstep_pred, SP.Npred);
-        }
-    }
-}
-
-
-void ErrorOutput(std::vector<particle> &a, int err, params *ptrSP, 
-             predator *pred){
-    FILE *fp;
-    unsigned int i;
-    unsigned int N = a.size();
-    fp=fopen((ptrSP->location + "E" + std::to_string(err) + "particle" + ptrSP->fileID + ".dat").c_str(), "a");
-    for(i=0; i<N; i++){
-        fprintf(fp,"%.4f\t%.4f\t%.4f\t%.4f\n", a[i].x[0], a[i].x[1], a[i].v[0], a[i].v[1]);
-    }
-    fprintf(fp,"\n\n");
-    fclose(fp);
-    
-    // save predator values
-    fp=fopen((ptrSP->location + "E" + std::to_string(err) + "predator" + ptrSP->fileID + ".dat").c_str(), "a");
-    
-    fprintf(fp,"%.4f\t%.4f\t%.4f\t%.4f\n", pred->x[0], pred->x[1], pred->v[0], pred->v[1]);
-    fprintf(fp,"\n\n");
-    fclose(fp);
-    
+void Output(int s, std::vector<particle> &a, params &SP){
+    // TODO: add more fctns for output
+    WriteParticles<particle>(a, SP, "part", SP.outstep, SP.N);
 }
 
 
@@ -446,7 +281,4 @@ void WriteParticles(std::vector<part> &a, params &SP,
 
 template
 void WriteParticles(std::vector<particle> &a, params &SP, 
-                    std::string name, double outstep, int Nori);
-template
-void WriteParticles(std::vector<predator> &a, params &SP, 
                     std::string name, double outstep, int Nori);

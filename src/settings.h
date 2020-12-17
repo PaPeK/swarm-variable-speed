@@ -41,6 +41,5 @@
 void SetCoreParameters(params* SysParams);
 void InitSystemParameters(params* SysParams);
 void InitSystem(std::vector<particle> &a, params SysParams);
-void InitPredator(std::vector<predator> &preds);
 void ResetSystem(std::vector<particle> &a, params *ptrSP, bool out, gsl_rng *r);
 #endif

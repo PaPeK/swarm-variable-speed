@@ -55,12 +55,6 @@ void ParseParameters(int argc, char **argv, params *SysParams)
     SysParams->sizeL = atof(getCmdOption(argv, argv+argc, "-L"));
     SysParams->location = getCmdOption(argv, argv+argc, "-l");
     SysParams->N = atoi(getCmdOption(argv, argv+argc, "-N"));
-    SysParams->Npred = atoi(getCmdOption(argv, argv+argc, "-n"));
-    SysParams->pred_time = atof(getCmdOption(argv, argv+argc, "-e"));
-    SysParams->pred_angle = atof(getCmdOption(argv, argv+argc, "-p"));
-    SysParams->pred_radius = atof(getCmdOption(argv, argv+argc, "-P"));
-    SysParams->pred_speed0 = atof(getCmdOption(argv, argv+argc, "-S"));
-    SysParams->kill_rate = atof(getCmdOption(argv, argv+argc, "-O"));
     SysParams->Dphi = atof(getCmdOption(argv, argv+argc, "-D"));
     SysParams->dt = atof(getCmdOption(argv, argv+argc, "-d"));
     SysParams->sim_time = atof(getCmdOption(argv, argv+argc, "-t"));
@@ -71,15 +65,9 @@ void ParseParameters(int argc, char **argv, params *SysParams)
     SysParams->rep_range = atof(getCmdOption(argv, argv+argc, "-h"));
     SysParams->rep_strength = atof(getCmdOption(argv, argv+argc, "-H"));
     SysParams->alg_strength = atof(getCmdOption(argv, argv+argc, "-A"));
-    SysParams->flee_strength = atof(getCmdOption(argv, argv+argc, "-F"));
-    SysParams->pred_strength = atof(getCmdOption(argv, argv+argc, "-f"));
     SysParams->rep_steepness = atof(getCmdOption(argv, argv+argc, "-Y"));
     SysParams->speed0 = atof(getCmdOption(argv, argv+argc, "-s"));
-    SysParams->pred_attack = atoi(getCmdOption(argv, argv+argc, "-c"));
     SysParams->cludist = atof(getCmdOption(argv, argv+argc, "-C"));
-    SysParams->kill_range = atof(getCmdOption(argv, argv+argc, "-G"));
-    SysParams->pred_angle_noise = atof(getCmdOption(argv, argv+argc, "-z"));
-    SysParams->pred_kill = atoi(getCmdOption(argv, argv+argc, "-x"));
     SysParams->fileID = getCmdOption(argv, argv+argc, "-E");
     SysParams->out_h5 = atoi(getCmdOption(argv, argv+argc, "-J"));
     SysParams->MinCluster = atoi(getCmdOption(argv, argv+argc, "-M"));
@@ -109,26 +97,14 @@ void OutputParameters(params SysParams)
     fprintf(fp,"rep_strength:       \t%g\n",SysParams.rep_strength);
     fprintf(fp,"alg_strength:       \t%g\n",SysParams.alg_strength);
 
-    fprintf(fp,"Npred:              \t%d\n",SysParams.Npred);
-    fprintf(fp,"flee_strength:      \t%g\n",SysParams.flee_strength);
-    fprintf(fp,"pred_strength:      \t%g\n",SysParams.pred_strength);
-    fprintf(fp,"pred_time:          \t%g\n",SysParams.pred_time);
-    fprintf(fp,"pred_angle:         \t%g\n",SysParams.pred_angle);
-    fprintf(fp,"pred_radius:        \t%g\n",SysParams.pred_radius);
-    fprintf(fp,"pred_speed0:        \t%g\n",SysParams.pred_speed0);
 
-    fprintf(fp,"pred_attack:        \t%d\n",SysParams.pred_attack);
     fprintf(fp,"output:             \t%g\n",SysParams.output);
     fprintf(fp,"BC:                 \t%d\n",SysParams.BC);
     fprintf(fp,"IC:                 \t%d\n",SysParams.IC);
     fprintf(fp,"cludist:            \t%g\n",SysParams.cludist);
-    fprintf(fp,"kill_range:         \t%g\n",SysParams.kill_range);
-    fprintf(fp,"pred_angle_noise:   \t%g\n",SysParams.pred_angle_noise);
-    fprintf(fp,"pred_kill:          \t%d\n",SysParams.pred_kill);
     fprintf(fp,"out_h5:             \t%d\n",SysParams.out_h5);
     fprintf(fp,"MinCluster:         \t%d\n",SysParams.MinCluster);
     fprintf(fp,"rep_steepness:      \t%g\n",SysParams.rep_steepness);
-    fprintf(fp,"kill_rate:          \t%g\n",SysParams.kill_rate);
 
     fclose(fp);
 }
@@ -292,19 +268,4 @@ void pava_load_set_paras(std::vector<particle> &a, std::string in_name){
             std::cout<< "!!!ATTENTION!!! more parameters to read, but stopped" << std::endl;
     }
     std::cout<< "loaded " << ii << "agent paras, ";
-}
-
-
-void pava_output(std::vector<particle> &a, std::vector<int> &cluster, std::string out_name){
-    int in_clu = 0;
-    FILE*   fp;
-    fp = fopen((out_name).c_str(), "w");
-    for(int i=0; i < a.size(); i++){
-        in_clu = 0;
-        if(cluster.end() != std::find(cluster.begin(), cluster.end(), i))
-            in_clu = 1;
-        fprintf(fp, "%d\t%d\t%.4f\t%d\n", a[i].id, in_clu, a[i].fitness, int(a[i].dead));
-    }
-    fprintf(fp, "\n");
-    fclose(fp);
 }
