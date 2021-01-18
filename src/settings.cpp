@@ -38,10 +38,13 @@ void SetCoreParameters(params* SP)
     SP->rep_steepness=-0.2;
 
     SP->alg_strength=0.0;
+    SP->turn_alpha=1.0;
 
     SP->output=1.0;
     SP->BC=-1;
     SP->IC=0;
+    SP->output_mode=1;
+    SP->out_extend = false;
 
     SP->step_output=1;
     SP->trans_time=0.0;
@@ -82,6 +85,26 @@ void InitSystemParameters(params* SP)
                         (0 == fmod(SP->trans_time / SP->dt / SP->step_output, 1));   // out starts at s<=trans_time/dt
     if (SP->total_outstep < 0)
         SP->total_outstep = 0;
+
+    SP->out_extend = false;
+    if (SP->fileID != "xx")
+        SP->out_extend = true;
+    if (SP->output_mode == 0){
+        SP->out_mean = true;
+        SP->out_particle = false;
+    }
+    else if (SP->output_mode == 1){
+        SP->out_mean = true;
+        SP->out_particle = true;
+    }
+    else{   // output_mode == 2
+        SP->out_mean = false;
+        SP->out_particle = true;
+    }
+    if (SP->total_outstep == 0){
+        SP->out_mean = false;
+        SP->out_particle = false;
+    }
 }
 
 

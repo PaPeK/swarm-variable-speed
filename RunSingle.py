@@ -39,6 +39,7 @@ def main():
     dic = dict()
     dic = swarmPy.get_base_params(record_time, trans_time=trans_time)
     # changes from base-parameters
+    dic['output_mode'] = 1
     dic['beta'] = 4 # relaxation coefficient
     dic['alg_strength'] = 1 # the order-disorder transition is at alg_strength=0.83
 

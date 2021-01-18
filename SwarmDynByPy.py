@@ -37,6 +37,7 @@ def get_base_params(record_time, trans_time=None):
     params["time"] = record_time + trans_time    # total time of simulation
     params["dt"] = 0.02
     params["output"] = .2
+    params["output_mode"] = 1
     # Initial Conditions
     # IC    0:v-dis,x-dis-box, 1:v-order, x-dis, 2:v-order, x-dis-box
     #       3:v-order, x-dis-circ  4: v-milling, x-cricle  5:v-dis, x-circle
@@ -57,8 +58,7 @@ def get_base_params(record_time, trans_time=None):
     params["rep_strength"] = 2.0 # 20. (voro)
     params["rep_steepness"] = -2    # for rep_range = 1 steepness should be between [-4, -2]
     params["alg_strength"] = 2
-    params["flee_strength"] = 4
-
+    params["turn_alpha"] = 1 # prevents divergent behavior at v=0 ( and consequence from real body)
 
     # #################### Params for OUTPUT computation
     # cludist< alpha-value(=12, compute distance of P to alpha-shape-swarm)
@@ -112,6 +112,7 @@ def dic2swarmdyn_command(dic):
     command += ' -J %d' % dic['out_h5']
     command += ' -d %g' % dic['dt']
     command += ' -o %g' % dic['output']
+    command += ' -m %d' % dic['output_mode']
     # simulation
     command += ' -L %g' % dic['size']
     command += ' -t %g' % dic['time']
@@ -129,4 +130,5 @@ def dic2swarmdyn_command(dic):
     command += ' -D %g' % dic['Dphi']
     command += ' -b %g' % dic['beta']
     command += ' -s %g' % dic['speed0']
+    command += ' -a %g' % dic['turn_alpha']
     return command

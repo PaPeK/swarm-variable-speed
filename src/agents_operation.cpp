@@ -130,12 +130,8 @@ std::vector<int> GetPreyCluster(std::vector<particle> &a, params *ptrSP, unsigne
     // finds cluster of which particles "id" is part of, 2 particles i and j are considered connected if
     // |r_ij|<=cludist
     // Thus if they are sufficient close and sufficient parallel to each other
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel    K;
-    typedef CGAL::Triangulation_vertex_base_with_info_2<int, K>    Vb;
-    typedef CGAL::Triangulation_data_structure_2<Vb>               Tds;
-    typedef CGAL::Point_set_2<K, Tds>                 PSet2;
-    typedef PSet2::Vertex_handle                      Vertex_handle;
-    typedef PSet2::Point                              Point;
+    typedef cgPSet2::Vertex_handle                      Vertex_handle;
+    typedef cgPSet2::Point                              Point;
     typedef std::pair<Point, int>                     pp;
 
     double cludist = ptrSP->cludist;    // if 2 particle have dist. larger cludist -> not same cluster 
@@ -160,14 +156,14 @@ std::vector<int> GetPreyCluster(std::vector<particle> &a, params *ptrSP, unsigne
     }
     // Delaunay t;
     // t.insert(Vr.begin(),Vr.end());
-    PSet2   PSet;      // Delauney Triangulation of Vertex set
+    cgPSet2   PSet;      // Delauney Triangulation of Vertex set
     PSet.insert(Vr.begin(),Vr.end());
    
     cluster.push_back(id);
     unsigned int cluele = 0;        // the elements of cluster whose nn are checked
     while (cluele < cluster.size()){
       Point actual = Vr[cluster[cluele]].first;   // point of vertex whose neighbors are checked
-      CGAL::Circle_2<K> rc(actual, squareradius);
+      CGAL::Circle_2<cgK> rc(actual, squareradius);
       std::vector<Vertex_handle> NN;      // vector of nn of i
       PSet.range_search(rc, std::back_inserter(NN));
       std::vector<Vertex_handle>::const_iterator it;
@@ -196,16 +192,14 @@ std::vector<int> GetPreyCluster(std::vector<particle> &a, params *ptrSP, unsigne
     // std::cout<< "cluster.size(): " << cluster.size() << "\n";
     return cluster;
 }
+
+
 std::vector<int> GetLargestCluster(std::vector<particle> &a, params *ptrSP){
     // finds largest cluster from particles, 2 particles i and j are considered connected if
     // |r_ij|<=cludist
     // Thus if they are sufficient close and sufficient parallel to each other
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel    K;
-    typedef CGAL::Triangulation_vertex_base_with_info_2<int, K>    Vb;
-    typedef CGAL::Triangulation_data_structure_2<Vb>               Tds;
-    typedef CGAL::Point_set_2<K, Tds>                 PSet2;
-    typedef PSet2::Vertex_handle                      Vertex_handle;
-    typedef PSet2::Point                              Point;
+    typedef cgPSet2::Vertex_handle                      Vertex_handle;
+    typedef cgPSet2::Point                              Point;
     typedef std::pair<Point, int>                     pp;
 
     double cludist = ptrSP->cludist;    // if 2 particle have dist. larger cludist -> not same cluster 
@@ -231,7 +225,7 @@ std::vector<int> GetLargestCluster(std::vector<particle> &a, params *ptrSP){
     }
     // Delaunay t;
     // t.insert(Vr.begin(),Vr.end());
-    PSet2   PSet;      // Delauney Triangulation of Vertex set
+    cgPSet2   PSet;      // Delauney Triangulation of Vertex set
     PSet.insert(Vr.begin(),Vr.end());
    
     // finds for each not sorted vertex a cluster and its other elements
@@ -242,7 +236,7 @@ std::vector<int> GetLargestCluster(std::vector<particle> &a, params *ptrSP){
             unsigned int cluele = 0;        // the elements of cluster whose nn are checked
             while (cluele < clustertemp.size()){
                 Point actual = Vr[clustertemp[cluele]].first;   // point of vertex whose neighbors are checked
-                CGAL::Circle_2<K> rc(actual, squareradius);
+                CGAL::Circle_2<cgK> rc(actual, squareradius);
                 std::vector<Vertex_handle> NN;      // vector of nn of i
                 PSet.range_search(rc, std::back_inserter(NN));
                 std::vector<Vertex_handle>::const_iterator it;
@@ -407,4 +401,53 @@ std::vector< std::pair< std::vector<double>, int > > GetCopies4PeriodicBC(
         }
     }
     return newPosId;
+}
+
+
+double get_elongation(std::vector<particle> &a, std::vector<double> &dir, std::vector<int> &nodes){
+    std::vector<double> p_dir(2, 0); // defines perpendicular direction
+    double len = vec_length(dir);
+    std::vector<double> cdir = dir;
+    cdir[0] /= len;
+    cdir[1] /= len;
+    p_dir[0] = cdir[1];
+    p_dir[1] = -cdir[0];
+    double min, max, p_min, p_max, dist, p_dist;
+    int ii = 0;
+    min = p_min = std::numeric_limits<double>::max();
+    max = p_max = std::numeric_limits<double>::lowest();
+    dist = p_dist = 0;
+    for(int i=0; i<nodes.size(); i++){
+        ii = nodes[i];
+        dist = a[ii].x[0] * cdir[0] + a[ii].x[1] * cdir[1];
+        p_dist = a[ii].x[0] * p_dir[0] + a[ii].x[1] * p_dir[1];
+        min = fmin(min, dist);
+        max = fmax(max, dist);
+        p_min = fmin(p_min, p_dist);
+        p_max = fmax(p_max, p_dist);
+    }
+    double elongation = (max - min) / (p_max - p_min);
+    return fabs(elongation);
+}
+
+
+double AreaConvexHull(std::vector<particle> &a, std::vector<int> &nodes){
+    typedef cgK::Point_2 Point_2;
+    typedef CGAL::Polygon_2<cgK> Polygon_2;
+    int ii;
+    Point_2 points[nodes.size()];
+    Point_2 convhull[nodes.size()];
+    for (unsigned int i=0; i<nodes.size(); i++){
+            ii = nodes[i];
+            points[i] = Point_2(a[ii].x[0], a[ii].x[1]);
+    }
+    Point_2 *ptr = CGAL::convex_hull_2( points, points+nodes.size(), convhull);
+
+    // create a polygon and put some points in it
+    Polygon_2 p;
+    for (int i=0; i<ptr-convhull; i++)
+      p.push_back(convhull[i]);
+
+    double Area = p.area();
+    return Area;
 }

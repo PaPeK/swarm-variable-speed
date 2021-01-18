@@ -66,8 +66,10 @@ void ParseParameters(int argc, char **argv, params *SysParams)
     SysParams->rep_range = atof(getCmdOption(argv, argv+argc, "-h"));
     SysParams->rep_strength = atof(getCmdOption(argv, argv+argc, "-H"));
     SysParams->alg_strength = atof(getCmdOption(argv, argv+argc, "-A"));
+    SysParams->turn_alpha = atof(getCmdOption(argv, argv+argc, "-a"));
     SysParams->rep_steepness = atof(getCmdOption(argv, argv+argc, "-Y"));
     SysParams->speed0 = atof(getCmdOption(argv, argv+argc, "-s"));
+    SysParams->output_mode = atoi(getCmdOption(argv, argv+argc, "-m"));
     SysParams->cludist = atof(getCmdOption(argv, argv+argc, "-C"));
     SysParams->fileID = getCmdOption(argv, argv+argc, "-E");
     SysParams->out_h5 = atoi(getCmdOption(argv, argv+argc, "-J"));
@@ -98,8 +100,10 @@ void OutputParameters(params SysParams)
     fprintf(fp,"rep_range:          \t%g\n",SysParams.rep_range);
     fprintf(fp,"rep_strength:       \t%g\n",SysParams.rep_strength);
     fprintf(fp,"alg_strength:       \t%g\n",SysParams.alg_strength);
+    fprintf(fp,"turn_alpha:         \t%g\n",SysParams.turn_alpha);
 
 
+    fprintf(fp,"output_mode:        \t%d\n",SysParams.output_mode);
     fprintf(fp,"output:             \t%g\n",SysParams.output);
     fprintf(fp,"BC:                 \t%d\n",SysParams.BC);
     fprintf(fp,"IC:                 \t%d\n",SysParams.IC);

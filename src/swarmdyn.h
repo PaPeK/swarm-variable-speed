@@ -72,3 +72,16 @@ void Output(int s, std::vector<particle> &a, params &SP);
 template<class part>
 void WriteParticles(std::vector<part> &a, params &SP, 
                     std::string name, double outstep, int Nori);
+std::vector<double> Out_swarm(std::vector<particle> &a, params &SP);
+double corr_velFluc_interact(std::vector<particle> &a,
+                             std::vector<double> &mean_v);
+template<class T, class MembType>
+double get_varOFVecFluctuation(std::vector<particle> &a,
+                               std::vector<double> &mean,
+                               MembType vec,
+                               std::vector<T> &nodes);
+template<class T>
+std::vector<double> basic_particle_averages(std::vector<particle> &a, std::vector<T> &nodes);
+void DataCreateSaveWrite(std::vector< std::vector<double> > &data,
+                     std::vector<double> &out, params &SP,
+                     std::string name, bool forceSave=false);

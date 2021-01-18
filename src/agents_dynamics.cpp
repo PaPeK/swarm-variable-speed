@@ -21,6 +21,7 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     int BC = ptrSP->BC;
     double sizeL = ptrSP->sizeL;
     double alg_strength = ptrSP->alg_strength;
+    double turn_alpha = ptrSP->turn_alpha;
     double beta = ptrSP->beta;
     double speed0 = ptrSP->speed0;
 
@@ -45,7 +46,7 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     forcep =- force[0] * sin(lphi) + force[1] * cos(lphi);
 
     if (a.vproj != 0) // TODO: should be True also for small vproj (otherwise angle overshoot) -> what is small (depends on dt and force strength)
-        lphi += ( forcep * dt + rnp) / a.vproj;  // rnp = sqrt(dt * Dphi) * N(0, 1) (Wiener Process) 
+        lphi += ( forcep * dt + rnp) / (a.vproj + turn_alpha);  // rnp = sqrt(dt * Dphi) * N(0, 1) (Wiener Process) 
     else
         lphi = atan2(force[1], force[0]); // instantaneous direction adaption
     lphi = fmod(lphi, 2*M_PI);

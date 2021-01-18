@@ -52,6 +52,12 @@
 #include <CGAL/property_map.h>                  // for nearest neighbor search needed
 #include <boost/iterator/zip_iterator.hpp>      // for nearest neighbor search needed
 
+// typedefs for voronoi and delauney computations NOT FOR ALPHA SHAPE
+typedef CGAL::Exact_predicates_inexact_constructions_kernel    cgK; // this one is also for alphaShape
+typedef CGAL::Triangulation_vertex_base_with_info_2<int, cgK>  cgVb_tri;
+typedef CGAL::Triangulation_data_structure_2<cgVb_tri>         cgTds;
+typedef CGAL::Point_set_2<cgK, cgTds>                          cgPSet2;
+
 void GetCenterOfMass(std::vector<particle> &, params *,
                      std::vector<int> &, std::vector<double> &out,
                      bool revise=false, unsigned int rev_time=1, double quantile=0.9); // gives the center of mass of cluster
@@ -67,4 +73,6 @@ void makePairAndPushBack(std::vector< std::pair< std::vector<double>, int > > &v
                          std::vector<double> &vec, int id);
 std::vector< std::pair< std::vector<double>, int > > GetCopies4PeriodicBC(
         std::vector< std::pair< std::vector<double>, int > > &posId, double L);
+double AreaConvexHull(std::vector<particle> &a, std::vector<int> &nodes); // computes area
+double get_elongation(std::vector<particle> &a, std::vector<double> &dir, std::vector<int> &nodes);
 #endif

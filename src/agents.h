@@ -60,6 +60,7 @@ struct params{
     double rep_strength;    // repulsion strength
     double rep_range;       // repulsion range
     double rep_steepness;   // repulsion - steepness of the sigmoid function
+    double turn_alpha;      // prevents divergent turning at v=0 AND consequence of real physical body (no point-particle)
 
 
     double sim_time;        // simulation time in natural time units
@@ -75,6 +76,10 @@ struct params{
     int sim_steps;          // auxiliary var. - total number of integration steps int(sim_time/dt)
     int step_output;        // auxiliary var. - integrations steps between outputs int(output/dt)
 
+    int output_mode;        // switch for output data (full, mean)
+    bool out_extend;        // derived from output_mode
+    bool out_mean;          // derived from output_mode
+    bool out_particle;      // derived from output_mode
     int out_h5;             // switch for ouput data format (txt, HDF5)
     unsigned int outstep;       // current output step (needed for hdf5)
     unsigned int total_outstep; // total Nr of output steps
@@ -84,6 +89,9 @@ struct params{
     unsigned int Sclu; // # of particles in largest cluster
     unsigned int MinCluster;    // # of particles necessary, otherwise repeat 
     double beta;            // relaxation rate of velocity along heading
+
+    // output-arrays
+    std::vector< std::vector<double> > dataOutMean;
 };
 typedef struct params params;
 
