@@ -142,10 +142,11 @@ class outDics:
 
 def join_enumerated_dicts(dic0, dic1):
     Nkeys0 = len(dic0.keys())
-    assert Nkeys0 - 1 == max(dic0.values()), 'len(dic0.keys()) - 1 != dic0.values() => Wrong values'
+    if Nkeys0 > 0:
+        assert Nkeys0 - 1 == max(dic0.values()), 'len(dic0.keys()) - 1 != dic0.values() => Wrong values'
     dic_new = dic0.copy()
     dic11 = dic1.copy()
-    for key in dic11.keys(): 
+    for key in dic11.keys():
         dic11[key] += Nkeys0
     dic_new.update(dic11)
     return dic_new
@@ -186,7 +187,9 @@ def existingSamplesH5(path, params):
     existing_samples = 0
     if f_h5.exists():
         with h5py.File(str(f_h5), 'r+') as f:
-            existing_samples = f['/' + dirname + '/swarm'].shape[0]
+            s0 = f['/' + dirname + '/swarm'].shape[0]
+            s1 = f['/' + dirname + '/part'].shape[0]
+            existing_samples = np.nanmax([s0, s1])
     return int(existing_samples)
 
 
@@ -207,7 +210,7 @@ def create_or_check_swarmdyn_hdf5(path, dirname, dic, verb=False):
             dims = np.array([0, Steps, len(outDic.swarm)])
             part_h5createDataset = partial(gen.h5createDataset, f, dirname)
             part_h5createDataset('swarm', dims)
-            if dic["output_mode"] == 1: # CREATE PARTICLE DSET:
+            if dic["output_mode"] > 0: # CREATE PARTICLE DSET:
                 dims = np.array([0, Steps, dic["N"], len(outDic.part)])
                 gen.h5createDataset(f, dirname, 'part', dims)
         existing_samples = 0
@@ -253,15 +256,14 @@ def MultipleRunSwarmdyn(params, runs, paratuple, verb=False):
         print('Running {} runs for '.format(runs) + dirname)
         print(dic['path'])
 
-    if dic['output_mode'] != 2:
-        if dic['out_h5'] == 0:     # txt output, runs sorted in directories
-            path = path + dirname + os.sep
-            add = len(glob.glob(path + "*"))    # glob.glob(pattern) returns list of paths matching pattern
-            if not os.path.exists(path):
-                os.mkdir(path)
-                add = 0
-        else:     # hdf5 output, file extended for new run
-            _ = create_or_check_swarmdyn_hdf5(path, dirname, dic)
+    if dic['out_h5'] == 0:     # txt output, runs sorted in directories
+        path = path + dirname + os.sep
+        add = len(glob.glob(path + "*"))    # glob.glob(pattern) returns list of paths matching pattern
+        if not os.path.exists(path):
+            os.mkdir(path)
+            add = 0
+    else:     # hdf5 output, file extended for new run
+        _ = create_or_check_swarmdyn_hdf5(path, dirname, dic)
 
     t0 = pytime.time()
     for i in range(runs):
@@ -316,7 +318,6 @@ def DoubleSimulationScan(params, runs=20,
         print(para_values)
         out = comp_pool.map(parallel_run_func, para_values, chunksize=1)   # para_values passed as tuple
         # JOIN SPLITTED RESULTS 
-        pdb.set_trace()
         if useAllCores and Nsplit > 1:
             para_values = [vals[:-1] for vals in para_values]  # remove para_value2
             para_values = np.unique(para_values, axis=0)
@@ -455,23 +456,24 @@ if __name__ == '__main__':
     #Scan Values
     scantype = 'para'# 'para': parallel; 'seq':sequential (Better for debugging)
     no_processors = 38  # 66: for itb cluster, 40: for CHIPS
-    runs = 2   # 40 
+    runs = 1   # 40 
 
-    rep = 1 # repeat: create the correct length of lists
     # Simulation BASE-Parameter Values
-    pred_time = 20
-    record_time = 100
+    equi_time = 20
+    record_time = 1000
     # AllOptiModes = ['WithAlphaSimplestI', 'WithAlphaSimplestII', 'WithAlphaAsPNAS']
     errOrder = False
 
     para_changes = dict()
-    base_para = sd.get_base_params(pred_time, record_time)
-    # base_para['output_mode'] = 0
+    base_para = sd.get_base_params(record_time, trans_time=equi_time)
+    rep = 1 # repeat: create the correct length of lists
+    base_para['output_mode'] = 2
     # non-explorativ: parameters based on fitting and optimization
     para_changes['para_name0']   = rep * ['beta']
     para_changes['para_values0'] = rep * [np.arange(0.5, 5, step=1)]
-    para_changes['para_name1'] = rep * ['alg_strength']
-    para_changes['para_values1'] = rep * [np.arange(0, 4, step=1)]
+    para_changes['para_name1'] = rep * ['Dphi']
+    para_changes['para_values1'] = rep * [np.arange(0, 2, step=0.2)]
+    para_changes['N'] = rep * [1]
 
     # OUTPATH-name
     # d_save = Path(os.path.realpath(__file__)).parent

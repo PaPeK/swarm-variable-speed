@@ -240,7 +240,7 @@ def evaluate_scan2d(paras, verb=None, deleteIfDone=None, paraRun=None):
     if deleteIfDone is None:
         deleteIfDone = False
     if paraRun is None:
-        paraRun = True
+        paraRun = False
     if paraRun:
         para_Id_pairs = []
     para_values0 = paras['para_values0']
@@ -256,16 +256,18 @@ def evaluate_scan2d(paras, verb=None, deleteIfDone=None, paraRun=None):
         para_vals = [para_values0[i1], para_values1[i2]]
         # initialize
         if i == 0:
-            means0, means_dic = AnalyseDataH5(paras, para_vals, verb=verb)
+            means0, means_dic, fileInfo = AnalyseDataH5(paras, para_vals, verb=verb)
             means = np.empty((xdim, ydim, len(means0)))
+            fileInfos = np.empty((xdim, ydim, 2), dtype=object) # file-name and group-name
             means[i1, i2] = means0
+            fileInfos[i1, i2] = fileInfo
             if verb:
                 print(means_dic.keys())
         else:
             if paraRun:
                 para_Id_pairs += [[i1, i2]]
                 continue
-            means[i1, i2], means_dic = AnalyseDataH5(paras, para_vals, verb=verb)
+            means[i1, i2], means_dic, fileInfos[i1, i2] = AnalyseDataH5(paras, para_vals, verb=verb)
         if deleteIfDone:
             f_name = s2d.get_out_name(paras, para_vals)
             gen.silentRemove(f_name)
@@ -276,7 +278,8 @@ def evaluate_scan2d(paras, verb=None, deleteIfDone=None, paraRun=None):
         for i in range(len(out)):
             index = out[i][0]
             means[index[0], index[1]] = out[i][1]
-    return means, means_dic
+            fileInfos[index[0], index[1]] = out[i][2]
+    return means, means_dic, fileInfos
 
 
 def AnalyseDataH5(para, para_vals, verb=None, paraRun=None):
@@ -310,19 +313,26 @@ def AnalyseDataH5(para, para_vals, verb=None, paraRun=None):
         dset_swarm = h5LoadIfExists(f, g_name + '/swarm')
         dset_part = h5LoadIfExists(f, g_name + '/part')
 
-    means, stds = GetSimpleMeanStd(dset_swarm)
-    out_dic = s2d.outDics().get_out_swarm_dict()
-    means0, stds, out_dic0 = GetSwarmMeanStd(dset_swarm)
-    means = np.append(means, means0)
-    out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
+    means = np.empty(0, dtype=float)
+    out_dic = dict()
 
-    if dset_part is not None:
-        means0, out_dic0 = get_UpdateMeans(dset_part)
+    if dset_swarm is not None:
+        means0, stds = GetSimpleMeanStd(dset_swarm)
+        out_dic0 = s2d.outDics().get_out_swarm_dict()
         means = np.append(means, means0)
         out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
+
+        means0, stds, out_dic0 = GetSwarmMeanStd(dset_swarm)
+        means = np.append(means, means0)
+        out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
+    # if dset_part is not None:
+    #     means0, out_dic0 = get_UpdateMeans(dset_part)
+    #     means = np.append(means, means0)
+    #     out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
+
     if paraRun:
-        return para_ids, means
-    return means, out_dic
+        return para_ids, means, [f_name, g_name]
+    return means, out_dic, [f_name, g_name]
 
 
 # Main function:
@@ -345,8 +355,8 @@ def Evaluate(sourcepath):
     else:
         print('start evaluation of ', len(para_values0) * len(para_values1),
               ' folders: ')
-        means, means_dic = evaluate_scan2d(paras, verb=True)
-        pickle.dump([means, means_dic], open(f_result, 'wb'))
+        means, means_dic, fileInfos = evaluate_scan2d(paras, verb=True)
+        pickle.dump([means, means_dic, fileInfos], open(f_result, 'wb'))
     f_current = os.path.realpath(__file__)
     gen.copyIfNeeded( f_current, sourcepath )
 
