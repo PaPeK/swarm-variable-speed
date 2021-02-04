@@ -6,13 +6,14 @@ import glob
 import sys
 import time as pytime
 import h5py
-import pickle
 import shutil
 import matplotlib
 from pathlib import Path
 import SwarmDynByPy as sd
 import general as gen
 import pdb
+import pickle
+
 
 if __name__ == '__main__':
     matplotlib.use('Agg')
@@ -122,8 +123,11 @@ class outDics:
                  'NND',
                  'IID',
                  'ND',
-                 'C_velFlucDir',
+                 'varVelFluc',
                  'C_velFluc',
+                 'av_eddi',
+                 'inv_NND2',
+                 'var_inv_NND2',
                 ]
         dic = gen.list2dict(keys0, pre=self.pre)
         return dic
@@ -135,7 +139,8 @@ class outDics:
                  'v0',
                  'v1',
                  'force0',
-                 'force1',]
+                 'force1',
+                 'eddi']
         dic = gen.list2dict(keys0, pre=self.pre)
         return dic
 
@@ -187,9 +192,9 @@ def existingSamplesH5(path, params):
     existing_samples = 0
     if f_h5.exists():
         with h5py.File(str(f_h5), 'r+') as f:
-            s0 = f['/' + dirname + '/swarm'].shape[0]
-            s1 = f['/' + dirname + '/part'].shape[0]
-            existing_samples = np.nanmax([s0, s1])
+            n_dsets = gen.h5AllDatasetNames(f, verbose=False)
+            sizes = [f[dset].shape[0] for dset in n_dsets]
+            existing_samples = np.nanmax(sizes)
     return int(existing_samples)
 
 
@@ -249,6 +254,8 @@ def MultipleRunSwarmdyn(params, runs, paratuple, verb=False):
     '''
     dic = params.copy()  # to not modify original part
     dirname = get_groupname(dic, paratuple)
+    for i, val in enumerate(paratuple):
+        dic[dic['para_name{}'.format(i)]] = paratuple[i]
     sd.solve_parameter_dependencies(dic)
     path = dic['path']
     dic['fileID'] = dirname
@@ -340,21 +347,21 @@ def get_numOfProc(dic, no_processors, runs, Nsplit, useAllCores=False):
             -> split by 2
     '''
     NparaTuples = len(dic['para_values0']) * len(dic['para_values1'])
+    if(no_processors > NparaTuples):
+        no_processors = NparaTuples
     if useAllCores:
         Nsplit = int( no_processors / NparaTuples )
         if(Nsplit > 1):
-            if Nsplit > runs:
-                Nsplit = runs
-            no_processors = Nsplit * NparaTuples
-            dic['para_name2'] = 'Nsplit'
-            dic['para_values2'] = list(range(Nsplit))
-            runs /= Nsplit
-            if (runs % 1) > 0: # to ensure: runs * Nsplit >= runs_original
-                runs = runs + 1
-            runs = int(runs)
-    else:
-        if(no_processors > NparaTuples):
-            no_processors = NparaTuples
+            if Nsplit > runs: # if no splits are necessary to compute all runs -> NO split
+                pass
+            else:
+                no_processors = Nsplit * NparaTuples
+                dic['para_name2'] = 'Nsplit'
+                dic['para_values2'] = list(range(Nsplit))
+                runs /= Nsplit
+                if (runs % 1) > 0: # to ensure: runs * Nsplit >= runs_original
+                    runs = runs + 1
+                runs = int(runs)
     return no_processors, Nsplit
 
 
@@ -427,8 +434,8 @@ def run_func4list(func, outpaths, base_para, para_changes,
         f_paras = Path(outpaths[i]) / 'paras_independent.pkl'
         time_stamp = pytime.strftime('%y%m%d%H')
         f_para_stamped = f_paras.parent / ('paras_independent' + time_stamp + '.pkl')
-        pickle.dump(newpara, f_paras.open('wb'))   # paras which will be used
-        pickle.dump(newpara, f_para_stamped.open("wb"))
+        pickle.dump(newpara, f_paras.open('wb'))    # paras which will be used
+        pickle.dump(newpara, f_para_stamped.open('wb'))
         print((("Outpath = {}, Processors = {}, Runs = {}, "
                ).format(outpaths[i], no_processors, runs)))
         func(newpara, scantype,
@@ -455,29 +462,36 @@ if __name__ == '__main__':
     t0 = pytime.time()
     #Scan Values
     scantype = 'para'# 'para': parallel; 'seq':sequential (Better for debugging)
-    no_processors = 38  # 66: for itb cluster, 40: for CHIPS
+    no_processors = 37  # 66: for itb cluster, 40: for CHIPS
     runs = 1   # 40 
 
     # Simulation BASE-Parameter Values
-    equi_time = 20
-    record_time = 1000
+    equi_time = 100
+    record_time = 100
     # AllOptiModes = ['WithAlphaSimplestI', 'WithAlphaSimplestII', 'WithAlphaAsPNAS']
     errOrder = False
 
     para_changes = dict()
     base_para = sd.get_base_params(record_time, trans_time=equi_time)
     rep = 1 # repeat: create the correct length of lists
-    base_para['output_mode'] = 2
+    base_para['output_mode'] = 0 # output: 0=only mean, 1=mean+particle, 2=only particle
     # non-explorativ: parameters based on fitting and optimization
-    para_changes['para_name0']   = rep * ['beta']
-    para_changes['para_values0'] = rep * [np.arange(0.5, 5, step=1)]
-    para_changes['para_name1'] = rep * ['Dphi']
-    para_changes['para_values1'] = rep * [np.arange(0, 2, step=0.2)]
-    para_changes['N'] = rep * [1]
+    para_changes['para_name0']   = rep * ['alg_strength']
+    para_changes['para_values0'] = [np.arange(0, 2, step=0.025)]
+    para_changes['para_name1'] = rep * ['beta']
+    para_changes['para_values1'] = rep * [1 * 2**np.arange(5, 6, step=1)]
+    para_changes['Dphi'] = rep * [1]
+    para_changes['dt'] = rep * [0.005]
+    para_changes['output'] = rep * [1]
+    # para_changes['alg_strength'] = rep * [0.25]
+    # para_changes['turn_alpha'] = rep * [1]
 
     # OUTPATH-name
     # d_save = Path(os.path.realpath(__file__)).parent
+    d_extra = 'Out_OP/Finer'
     d_save = Path('/home/klamser/Seafile/PoSI_EmergentStructure/Data/SimuPPK')
+    d_save = Path('/mnt/data3/PoSI_VariableSpeed/') / d_extra
+    d_save.mkdir(exist_ok=True)
     keys = [k for k in para_changes.keys() if 'values' not in k]
     keys.sort()
     para_changes['path'] = []
@@ -487,6 +501,8 @@ if __name__ == '__main__':
             f_name += '__{}_{}'.format(k, para_changes[k][i])
         para_changes['path'].append(str(d_save / f_name))
     outpaths = para_changes['path']
+    # BELOW para_cahnges are not part of the name
+    para_changes['motivation'] = ['PHT for different beta AND dt=0.005 (because beta up to 16).']
 
     # create Data:
     run_func4list(Scanner, outpaths, base_para, para_changes,
