@@ -20,6 +20,7 @@ import pickle
 import Scan2D as s2d
 import general as gen
 from TsTools import TSPositionPlus as tspp    # needed for spatial_properties
+from pathlib import Path
 
 
 def getTEnd(data):
@@ -45,38 +46,6 @@ def getTEnd(data):
     return t_end
 
 
-def get_UpdateMeans(datas, pre=None):
-    '''
-    INPUT:
-        datas.shape(samples, time, value)
-            assumme
-    OUTPUT:
-        up_rate in units [1/frame]
-        up_len in units [frame]
-    '''
-    samples, time, N, varis = datas.shape
-    out_names = ['burst_rate',
-                 'burst_duration',
-                ]
-    out_dic = s2d.names2dict(out_names)
-    if datas is None:  # only need dictionary
-        out_dic = s2d.names2dict(out_names, pre)
-        return out_dic
-    means = np.empty((samples, len(out_names))) * np.nan
-    for i, data in enumerate(datas):
-        t_end = getTEnd(data)
-        if t_end > 0:
-            simuTSPP = tspp.TSplus(data[:t_end, :, :2], None, False, None, burstWithTurn=False)
-            means[i, out_dic['burst_rate']] = np.mean(simuTSPP.up_rate)
-            uplens = []
-            for j in range(8):
-                up_len = np.mean(simuTSPP.up_len[j])
-                uplens.append(up_len)
-            means[i, out_dic['burst_duration']] = np.mean(uplens)
-    means = np.nanmean(means, axis=0)
-    return means, out_dic 
-
-
 def GetSimpleMeanStd(datas):
     '''
     just computes mean and std
@@ -97,46 +66,6 @@ def GetSimpleMeanStd(datas):
     return means, std
 
 
-def get_fishNet_meansStd(datas, outRawData=None):
-    '''
-    just computes mean and std
-    INPUT:
-        datas.shape(samples, time, value)
-    '''
-    gen.setDefault(outRawData, False)
-    samples, time, varis = datas.shape
-    out_names = ['kill_rate',
-                 'kill_rate2',
-                ]
-    if outRawData:
-        out_names += ['N_dead', 'simu_time']
-    out_dic = s2d.names2dict(out_names)
-    if datas is None:  # only need dictionary
-        out_dic = s2d.names2dict(out_names, pre)
-        return out_dic
-    in_dic = s2d.get_out_swarm_fishNet_dict()
-    means = np.empty((samples, len(out_names))) * np.nan
-    for i, data in enumerate(datas):
-        t_end = getTEnd(data)
-        if t_end > 0:
-            means[i, out_dic['kill_rate']] = (data[t_end-1, in_dic['Ndead']] /
-                                              t_end)
-            if outRawData:
-                means[i, out_dic['N_dead']] = data[t_end-1, in_dic['Ndead']]
-                means[i, out_dic['simu_time']] = t_end
-        there = np.where(data[:, in_dic['Ndead']] == 15)[0]
-        if len(there) != 0:
-            t_end = there[0] + 1
-        if t_end > 0:
-            means[i, out_dic['kill_rate2']] = (data[t_end-1, in_dic['Ndead']] /
-                                               t_end)
-    if outRawData:
-        return means, out_dic 
-    std = np.nanstd(means, axis=0)
-    means = np.nanmean(means, axis=0)
-    return means, std, out_dic 
-
-
 def GetSwarmMeanStd(datas, pre=None):
     '''
     returns averages of combinations of values (Correlations, ...)
@@ -150,6 +79,9 @@ def GetSwarmMeanStd(datas, pre=None):
                  'pol_order_Moment4',
                  'suscept',
                  'grp_speed',
+                 'std_grp_speed',
+                 'std_pol',
+                 'Corr_speed_op'
                 ]
     out_dic = s2d.names2dict(out_names)
     if datas is None:  # only need dictionary
@@ -165,66 +97,19 @@ def GetSwarmMeanStd(datas, pre=None):
         t_end = getTEnd(data)
         weights[i] = t_end
         if t_end > 0:
-            dat = data[:t_end]
-            means[i, out_dic['pol_order_Tgradient']] = np.nanmean(np.diff((dat[1:, in_dic['pol_order']])))
-            means[i, out_dic['pol_order_Moment2']] = np.nanmean(dat[:, in_dic['pol_order']]**2)
-            means[i, out_dic['pol_order_Moment4']] = np.nanmean(dat[:, in_dic['pol_order']]**4)
-            means[i, out_dic['suscept']] = dat[-1, in_dic['N']] * np.var(dat[:, in_dic['pol_order']])
-            means[i, out_dic['grp_speed']] = np.nanmean(np.sqrt( dat[:, in_dic['avg_v[0]']]**2 +
-                                                                 dat[:, in_dic['avg_v[1]']]**2) )
-    means = gen.NanAverage(means, weights)
-    stds = np.nanstd(means)
-    out_dic = s2d.names2dict(out_names, pre)
-    return means, stds, out_dic
-
-
-def GetSwarmPredMeanStd(datas, paras, pre=None):
-    '''
-    returns averages of combinations of values (Correlations, ...)
-    and a dictionary with appropriate name for value
-    INPUT:
-        datas.shape(samples, time, value)
-            shape = (samples, time, value)
-            !!ASSUMES!!: h5dset=pred_swarm
-    '''
-    out_names = ['END<fit>_f<0',
-                 'END<fit>',
-                 'ENDN_f<0',
-                 'ENDpred.kills',
-                 'ENDN_f<0/time',
-                 'END<fit>/time',
-                 't_1stdead',
-                ]
-    out_dic = s2d.names2dict(out_names)
-    if datas is None:
-        out_dic = s2d.names2dict(out_names, pre)
-        return out_dic
-    samples, time, varis = datas.shape
-    means = np.empty((samples, len(out_dic.keys()))) * np.nan
-    weights = np.empty(samples)
-    dic = s2d.get_out_swarm_pred_dict()
-    for i, data in enumerate(datas):
-        t_end = getTEnd(data)
-        weights[i] = t_end
-        if t_end > 0:
-            dat = data[:t_end]
-            # final measures
-            means[i, out_dic['END<fit>_f<0']] = (dat[-1, dic['fit_sum']] /
-                                                  dat[-1, dic['fit_count']])
-            means[i, out_dic['END<fit>']] = (dat[-1, dic['fit_sum']] /
-                                              dat[-1, dic['N_clu']])
-            means[i, out_dic['ENDN_f<0']] = dat[-1, dic['fit_count']]
-            means[i, out_dic['ENDpred.kills']] = dat[-1, dic['pred.kills']]
-            means[i, out_dic['ENDN_f<0/time']] = (dat[-1, dic['fit_count']] /
-                                                   (paras['output'] * t_end))
-            means[i, out_dic['END<fit>/time']] = (dat[-1, dic['fit_sum']] /
-                                              (dat[-1, dic['N_clu']] * t_end))
-            t_1stdead = np.where(dat[:, dic['pred.kills']] > 0)[0]
-            if len(t_1stdead) > 0:
-                t_1stdead = t_1stdead[0]
-            else:
-                t_1stdead = t_end
-            means[i, out_dic['t_1stdead']] = t_1stdead
+            dat = data[:t_end].T
+            order = dat[in_dic['pol_order']]
+            means[i, out_dic['pol_order_Tgradient']] = np.nanmean(np.diff((order)))
+            means[i, out_dic['pol_order_Moment2']] = np.nanmean(order**2)
+            means[i, out_dic['pol_order_Moment4']] = np.nanmean(order**4)
+            means[i, out_dic['suscept']] = dat[in_dic['N'], -1] * np.var(order)
+            means[i, out_dic['std_pol']] = np.nanstd(order)
+            grp_speed = np.sqrt( dat[in_dic['avg_v[0]']]**2 +
+                                 dat[in_dic['avg_v[1]']]**2)
+            means[i, out_dic['grp_speed']] = np.nanmean(grp_speed)
+            means[i, out_dic['std_grp_speed']] = np.nanstd(grp_speed)
+            speed = dat[in_dic['avg_speed']]
+            means[i, out_dic['Corr_speed_op']] = np.corrcoef(speed, order)[0, 1]
     means = gen.NanAverage(means, weights)
     stds = np.nanstd(means)
     out_dic = s2d.names2dict(out_names, pre)
@@ -325,10 +210,6 @@ def AnalyseDataH5(para, para_vals, verb=None, paraRun=None):
         means0, stds, out_dic0 = GetSwarmMeanStd(dset_swarm)
         means = np.append(means, means0)
         out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
-    # if dset_part is not None:
-    #     means0, out_dic0 = get_UpdateMeans(dset_part)
-    #     means = np.append(means, means0)
-    #     out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
 
     if paraRun:
         return para_ids, means, [f_name, g_name]
@@ -336,9 +217,11 @@ def AnalyseDataH5(para, para_vals, verb=None, paraRun=None):
 
 
 # Main function:
-def Evaluate(sourcepath):
-    f_paras = os.path.join(sourcepath, "paras_independent.pkl")
-    paras = pickle.load(open(f_paras, "rb"))
+def Evaluate(sourcepath, redo=None):
+    if redo is None:
+        redo = False
+    f_paras = Path(sourcepath) /  'paras_independent.pkl'
+    paras = pickle.load(f_paras.open("rb"))
     para_name0 = paras['para_name0']
     para_name1 = paras['para_name1']
     para_values0 = paras['para_values0']
@@ -347,16 +230,13 @@ def Evaluate(sourcepath):
     out_h5 = paras['out_h5']
     assert out_h5 == 1, "data-analysis only supported for hdf5"
 
-    f_result = os.path.join(sourcepath, "MeanData.pkl")
-    os.system('rm ' + f_result)
+    f_result = Path(sourcepath) / "MeanData.pkl"
     if os.path.isfile(f_result):
-        print('loading:', f_result)
-        means, means_dic = pickle.load(open(f_result, 'rb'))
-    else:
-        print('start evaluation of ', len(para_values0) * len(para_values1),
-              ' folders: ')
-        means, means_dic, fileInfos = evaluate_scan2d(paras, verb=True)
-        pickle.dump([means, means_dic, fileInfos], open(f_result, 'wb'))
+        f_result.unlink()
+    print('start evaluation of ', len(para_values0) * len(para_values1),
+          ' folders: ')
+    means, means_dic, fileInfos = evaluate_scan2d(paras, verb=True)
+    pickle.dump([means, means_dic, fileInfos], open(f_result, 'wb'))
     f_current = os.path.realpath(__file__)
     gen.copyIfNeeded( f_current, sourcepath )
 
