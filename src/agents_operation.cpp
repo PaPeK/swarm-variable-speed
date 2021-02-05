@@ -334,6 +334,7 @@ std::vector<double> Dist2AlphaShape(std::vector<particle> &a,
                 break;
         }
         distances[i] = min_dist;
+        a[i].eddi = min_dist;
     }
     return distances;
 }

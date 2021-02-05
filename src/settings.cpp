@@ -28,6 +28,7 @@ void SetCoreParameters(params* SP)
     SP->sim_time=100;
     SP->dt=0.05;
     SP->noisep=0.01;
+    SP->noisev=0.0;
     SP->sim_steps=2000;
     SP->trans_time=0;
 
@@ -64,6 +65,7 @@ void InitSystemParameters(params* SP)
     // parameter data after parsing the command line
 
     SP->noisep = sqrt(SP->dt * 2 * SP->Dphi);
+    SP->noisev = sqrt(SP->dt * 2 * SP->Dv);
 
     // Set output step
     if(SP->output < SP->dt)
@@ -105,6 +107,8 @@ void InitSystemParameters(params* SP)
         SP->out_mean = false;
         SP->out_particle = false;
     }
+
+    SP->MinCluster = static_cast<int>(fmax(SP->MinCluster, 1));
 }
 
 
@@ -122,6 +126,7 @@ void InitSystem(std::vector<particle> &a, params SP)
         a[i].vproj=SP.speed0;
         a[i].counter_rep=0;
         a[i].id = i;
+        a[i].eddi = 0;
     }
 }
 

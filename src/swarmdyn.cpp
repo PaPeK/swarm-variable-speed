@@ -107,7 +107,6 @@ int main(int argc, char **argv){
             agent = agentsave;
             SysPara.Sclu = bestSclu;
             // go back exactly where it stopped
-            std::vector<double> eddi = Dist2AlphaShape(agent, &SysPara);
             Output(s, agent, SysPara);
             SysPara.outstep += 1;
             sstart = static_cast<int>(SysPara.trans_time/dt) + 1;
@@ -171,6 +170,7 @@ void Step(int s, std::vector<particle> &a, params* ptrSP)
     // function for performing a single (Euler) integration step
     int i = 0;
     double rnp = 0.0;
+    double rnv = 0.0;
 
 #if LOCAL_METRIC==1
     int box=ptrSP->box;
@@ -181,24 +181,26 @@ void Step(int s, std::vector<particle> &a, params* ptrSP)
     int ii;
 
     // Reset simulation-step specific values to default
-    for (i=0; i<N; i++)
-        a[i].NN.resize(0);
-    InteractionVoronoiF2F(a, ptrSP);
+    if (N > 1){
+        for (i=0; i<N; i++)
+            a[i].NN.resize(0);
+        InteractionVoronoiF2F(a, ptrSP);
+    }
 
     // Update all agents
     for(i=0;i<N;i++)
     {
         // Generate noise
         rnp = ptrSP->noisep * gsl_ran_gaussian(r, 1.0);
-        bool var_speed = false;
-        MoveParticle(a[i], ptrSP, r, rnp);
+        rnv = ptrSP->noisev * gsl_ran_gaussian(r, 1.0);
+        MoveParticle(a[i], ptrSP, r, rnp, rnv);
     }
 }
 
 
 void Output(int s, std::vector<particle> &a, params &SP){
+    std::vector<double> eddi = Dist2AlphaShape(a, &SP); // sets each agent.eddi
     std::vector<double> out;
-    // TODO: add more fctns for output
     if (SP.out_mean){
         out = Out_swarm(a, SP);
         DataCreateSaveWrite(SP.dataOutMean, out, SP, "swarm");
@@ -231,6 +233,9 @@ std::vector<double> Out_swarm(std::vector<particle> &a, params &SP){
     double NND = 0;     // Nearest Neighbor Distance
     double ND = 0;      // Neighbor Distance
     double nd = 0;
+    double av_eddi = 0;
+    double inv_NND2 = 0;
+    std::vector<double> all_inv_NND2(N);
     for(int i=0; i<N; i++){
         vec_add221(avg_x, a[i].x);
         // NND:
@@ -245,6 +250,7 @@ std::vector<double> Out_swarm(std::vector<particle> &a, params &SP){
         ND += nd;
 
         // NND: (not in NN-loop because async-update do not has always NN)
+        // ATTENTION: the computatoin of the NND uses both loops (also IID-loop)
         hd = SP.N * 10 * SP.rep_range;  // arbitrary large value
         for(int j=0; j<i-1; j++){
             dist = CalcDist(a[i].x, a[j].x, SP.BC, SP.sizeL);
@@ -262,15 +268,30 @@ std::vector<double> Out_swarm(std::vector<particle> &a, params &SP){
             }
         }
         NND += hd;
+        hd = 1 / (hd * hd);
+        inv_NND2 += hd;
+        all_inv_NND2[i] = hd;
+        av_eddi += a[i].eddi;
 
     }
+
     vec_div221(avg_x, N);
     NND /= N;
     ND /= N;
+    inv_NND2 /= N;
     IID /= (N-1) * N;
+    av_eddi /= N;
     double avgvel = vec_length(avg_v);
     double pol_order = vec_length(avg_u);
     // double avgdirection = atan2(avg_v[1], avg_v[0]);
+
+    //VARIANCE computation:
+    double var_inv_NND2 = 0;
+    for(int i=0; i<N; i++){
+        hd = all_inv_NND2[i] - inv_NND2;
+        var_inv_NND2 += hd * hd;
+    }
+    var_inv_NND2 /= N;
 
     // Calc normalized angular momentum (normalized by radial distance)
     // milling OP:
@@ -301,7 +322,7 @@ std::vector<double> Out_swarm(std::vector<particle> &a, params &SP){
 
     // generate output
     std::vector<double> out_vec;
-    out_vec.reserve(17);
+    out_vec.reserve(21);
     out_vec.push_back( N); 
     out_vec.push_back( pol_order); 
     out_vec.push_back( L_norm); 
@@ -320,6 +341,9 @@ std::vector<double> Out_swarm(std::vector<particle> &a, params &SP){
     out_vec.push_back( ND); 
     out_vec.push_back( varVelFluc);
     out_vec.push_back( C_velFluc); 
+    out_vec.push_back( av_eddi);
+    out_vec.push_back( inv_NND2);
+    out_vec.push_back( var_inv_NND2);
 
     return out_vec;
 }

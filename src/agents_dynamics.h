@@ -33,7 +33,7 @@
 #include <math.h>
 #include <random>       // std::default_random_engine
 
-void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp);
+void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp, double rnv);
 template<class agent>
 void Boundary(agent &a, double sizeL,  int BC);             // calculate boundary conditions
 #endif

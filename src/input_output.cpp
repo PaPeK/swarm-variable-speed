@@ -56,6 +56,7 @@ void ParseParameters(int argc, char **argv, params *SysParams)
     SysParams->location = getCmdOption(argv, argv+argc, "-l");
     SysParams->N = atoi(getCmdOption(argv, argv+argc, "-N"));
     SysParams->Dphi = atof(getCmdOption(argv, argv+argc, "-D"));
+    SysParams->Dv = atof(getCmdOption(argv, argv+argc, "-V"));
     SysParams->beta = atof(getCmdOption(argv, argv+argc, "-b"));
     SysParams->dt = atof(getCmdOption(argv, argv+argc, "-d"));
     SysParams->sim_time = atof(getCmdOption(argv, argv+argc, "-t"));
@@ -95,6 +96,7 @@ void OutputParameters(params SysParams)
     fprintf(fp,"time:               \t%g\n",SysParams.sim_time);
     fprintf(fp,"trans_time:         \t%g\n",SysParams.trans_time);
     fprintf(fp,"Dp:                 \t%g\n",SysParams.Dphi);
+    fprintf(fp,"Dv:                 \t%g\n",SysParams.Dv);
     fprintf(fp,"speed0:             \t%g\n",SysParams.speed0);
     fprintf(fp,"beta:               \t%g\n",SysParams.beta);
     fprintf(fp,"rep_range:          \t%g\n",SysParams.rep_range);

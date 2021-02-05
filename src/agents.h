@@ -37,6 +37,7 @@ struct particle{
     std::vector<double> force_rep;    // repulsion vector
     unsigned int id;        // ID of each agent (needed to split and merge agents correctly)
     std::vector<unsigned int> NN;    // vector containing all NN
+    double eddi;  // distance from alpha-shape (EDge DIstance)
 
     // counters of interaction partners - important only for local metric coupling (not global)
     int counter_rep;        // counter repulsion partners 
@@ -55,6 +56,8 @@ struct params{
     double sizeL;           // system size
     double Dphi;            // angular noise intensity  (= standard deviation)
     double noisep;          // auxiliary var. - std. deviation of the angular noise
+    double Dv;              // velocity noise intensity (= variance/2)
+    double noisev;          // auxiliary var. - std. deviation of velocity noise
 
     double alg_strength;    // alignment strength
     double rep_strength;    // repulsion strength

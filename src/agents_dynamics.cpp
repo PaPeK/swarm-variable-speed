@@ -9,7 +9,7 @@
 #include "agents_dynamics.h"
 
 
-void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
+void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp, double rnv){
     double h1 = 0;      // helper
     double dt = ptrSP->dt;
     double rep_strength = ptrSP->rep_strength;
@@ -39,13 +39,13 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp){
     double vproj = a.vproj;     // to use correct time-step
     forcev = force[0] * cos(lphi) + force[1] * sin(lphi);
     a.vproj += (beta * (speed0 - a.vproj) + forcev) * dt;
-    // a.vproj += rnv;     // rnv = sqrt(dt * Dv) * N(0, 1) TODO: should we have speed noise?
+    a.vproj += rnv;     // rnv = sqrt(dt * Dv) * N(0, 1)
     if (a.vproj < 0)     // prevents F of swimming back
         a.vproj = 0;    // angle adapted below to exactly the force direction
 
     forcep =- force[0] * sin(lphi) + force[1] * cos(lphi);
 
-    if (a.vproj != 0) // TODO: should be True also for small vproj (otherwise angle overshoot) -> what is small (depends on dt and force strength)
+    if (a.vproj + turn_alpha != 0) // TODO: should be True also for small vproj (otherwise angle overshoot) -> what is small (depends on dt and force strength)
         lphi += ( forcep * dt + rnp) / (a.vproj + turn_alpha);  // rnp = sqrt(dt * Dphi) * N(0, 1) (Wiener Process) 
     else
         lphi = atan2(force[1], force[0]); // instantaneous direction adaption
