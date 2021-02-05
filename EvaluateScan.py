@@ -125,7 +125,7 @@ def evaluate_scan2d(paras, verb=None, deleteIfDone=None, paraRun=None):
     if deleteIfDone is None:
         deleteIfDone = False
     if paraRun is None:
-        paraRun = False
+        paraRun = True
     if paraRun:
         para_Id_pairs = []
     para_values0 = paras['para_values0']
@@ -217,9 +217,7 @@ def AnalyseDataH5(para, para_vals, verb=None, paraRun=None):
 
 
 # Main function:
-def Evaluate(sourcepath, redo=None):
-    if redo is None:
-        redo = False
+def Evaluate(sourcepath):
     f_paras = Path(sourcepath) /  'paras_independent.pkl'
     paras = pickle.load(f_paras.open("rb"))
     para_name0 = paras['para_name0']
@@ -231,12 +229,12 @@ def Evaluate(sourcepath, redo=None):
     assert out_h5 == 1, "data-analysis only supported for hdf5"
 
     f_result = Path(sourcepath) / "MeanData.pkl"
-    if os.path.isfile(f_result):
+    if f_result.exists():
         f_result.unlink()
     print('start evaluation of ', len(para_values0) * len(para_values1),
           ' folders: ')
     means, means_dic, fileInfos = evaluate_scan2d(paras, verb=True)
-    pickle.dump([means, means_dic, fileInfos], open(f_result, 'wb'))
+    pickle.dump([means, means_dic, fileInfos], f_result.open('wb'))
     f_current = os.path.realpath(__file__)
     gen.copyIfNeeded( f_current, sourcepath )
 

@@ -52,6 +52,7 @@ def get_base_params(record_time, trans_time=None):
 
     # #################### F behavior
     params["Dphi"] = 0.5    # angular noise (= variance/2) --> Pi^2/4=2.5 is very large
+    params["Dv"] = 0.4      # speed noise (= variance/2) --> what is large?
     params["speed0"] = 1.0
     params["beta"] = 4
     params["rep_range"] = 1
@@ -63,7 +64,7 @@ def get_base_params(record_time, trans_time=None):
     # #################### Params for OUTPUT computation
     # cludist< alpha-value(=12, compute distance of P to alpha-shape-swarm)
     #   if |r_ij| > cludist -> not same cluster (unless close to others)
-    params["cludist"] = 5 * params['rep_range']
+    params["cludist"] = 2 * 3 * params['rep_range']
     params["MinCluster"] = 0.9 # percentage of cluster necessary to pass the simu
 
     return params
@@ -121,13 +122,15 @@ def dic2swarmdyn_command(dic):
     command += ' -I %d' % dic['IC']
     command += ' -M %d' % dic['MinCluster']
     command += ' -C %g' % dic['cludist']
-    # particles
+    # particles-particle interactions
     command += ' -N %d' % dic['N']
     command += ' -h %g' % dic['rep_range']
     command += ' -Y %g' % dic['rep_steepness']
     command += ' -H %g' % dic['rep_strength']
     command += ' -A %g' % dic['alg_strength']
+    # single particle definition
     command += ' -D %g' % dic['Dphi']
+    command += ' -V %g' % dic['Dv']
     command += ' -b %g' % dic['beta']
     command += ' -s %g' % dic['speed0']
     command += ' -a %g' % dic['turn_alpha']

@@ -27,25 +27,40 @@ if __name__ == '__main__':
     matplotlib.use('TkAgg')
 import SwarmDynByPy as swarmPy
 import AnimateRun
+import json
+from pathlib import Path
 
 def main():
     # Input Parameters
     #########################################
     dockerName = None # alternatively 'gcc_docker' or None see README.md for usage (Docker-alternative)
 
-    trans_time = 50 # 200
-    record_time = 60
+    trans_time = 100 # 200
+    record_time = 40 # 1200
 
     dic = dict()
     dic = swarmPy.get_base_params(record_time, trans_time=trans_time)
     # changes from base-parameters
-    dic['output_mode'] = 1
-    dic['beta'] = 4 # relaxation coefficient
-    dic['alg_strength'] = 1 # the order-disorder transition is at alg_strength=0.83
+    dicC = dict()
+    dicC['N'] = 400
+    dicC['output_mode'] = 2
+    # dic['output'] = 0.2
+    dicC['beta'] = 0.4 # relaxation coefficient
+    dicC['alg_strength'] = 9.9 # the order-disorder transition is at alg_strength=0.83
+    # dicC['rep_strength'] = 2.26 # the order-disorder transition is at alg_strength=0.83
+    f_name = ''
+    keys = sorted(list(dicC.keys()))
+    for k in keys:
+        f_name += '{}{}'.format(k, dicC[k])
+        dic[k] = dicC[k]
+    print(f_name)
+
 
     # Generate and Run Command
     #########################################
     swarmPy.solve_parameter_dependencies(dic)
+    f_para = Path.cwd() / 'parameters.json'
+    json.dump(dic, f_para.open('w', encoding='utf-8'), indent=4, ensure_ascii=False)
     command = swarmPy.dic2swarmdyn_command(dic)
     print(command)
     t0 = pytime.time()

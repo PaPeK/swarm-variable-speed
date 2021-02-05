@@ -120,3 +120,67 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Implementation details
+
+The code consists of a `c++` part (costly numerical simulations) which is accessed via `python`-wrapper scripts.
+
+## C++ simulation
+
+The c++ code is in the `src`-folder and split in multiple logic (more or less) parts.
+The splitting in different files and headers is usefull for developing, because it strongly reduces compilation time if only part of the code is changed.
+The following parts exists (sorted according their "conceptual importance"):
+
+* main (main loop, output):
+    * `swarmdyn.cpp`
+* agent- and system-parameter: definitions, initialization and parsing:
+    * `agents.cpp/.h` (definition)
+    * `settings.cpp` (initialization)
+    * `input_output.cpp` (parsing)
+* agents: individual dynamics, interactions(network), social forces, operations
+    * `agents_dynamics.cpp`
+    * `agents_interact.cpp`
+    * `social_forces.cpp`
+    * `agents_operation.cpp`
+* tools: hdf5 writing, maths, raycasting (for visual field ... actually not needed):
+    * `h5tools.cpp`
+    * `mathtools.cpp`
+    * raycasting (based on Colin Twomey raycasting-repository: fovea link??):
+        * `fov.cpp`
+        * `geometry.cpp`
+        * `ray_casting.cpp`
+
+### Hard coded peculiarities
+
+* if `fileID = 'xx'` the hdf5-file _out_xx.h5_ is created by the c++ code in the current directory.
+    * otherwise the c++ code expects that an hdf5-file exist with the name _out_fileID.h5_ 
+* if a anything in the header `src/agents.h` is changed, the whole code needs a recompilation 
+    * do `rm -f obj/*`          (removes all obj and forces a recompilation)
+    * run `make`
+    * Todo: maybe place the class definitions in `agents.cpp` to prevent this
+
+## Python wrapper
+
+
+### Single Run (RunSingle.py)
+
+#### Animation (AnimateRun.py)
+
+* The code can be animated if the dataset `part` (for partiticles) exists via `python AnimateRun.py` assuming that the file `out_xx.h5` exists (or specify another file).
+    * the script `AnimateRun.py` is based on the github gitrepository [animateswarm](https://github.com/PaPeK/animateswarm)
+
+### Parameter Scans (Scan2D.py)
+This script can call mutliple 2D-scans sequentially.
+* Each scan is parallelized by running each point in parameter-space on a seperate process.
+    * each process saves the output to a seperate hdf5-file (with the parameter-values in its name)
+    * for each parameter-pair multiple samples can be computed and the scan can get extended
+        * to extend: run the Scan2D.py with the same parameters but a larger value for _runs_
+        * Problem: if _para_values0_ or _para_values0_ is changed the code checks only if already runs exist for the first parameter-pair -> if they exist, the total number of runs is reduced by the number of existing runs (no parameter)
+    * if the number of parameter-pairs is smaller than the number of available processors: the samples are split and later reunited
+
+#### Evaluation of Scans (EvaluateScan.py)
+
+The script evaluates each parameter-point and returns the output (mean or std or more specific processing) in an array which whose rows and columns correspond to the respective paremter-points.
+These arrays and a dictionary which links keywords to the entry in the last dimension of the array is saved in `Mean.pkl`.
+
+

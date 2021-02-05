@@ -240,7 +240,6 @@ def UpdateViaAnimation(fig, tasks, tmin, tmax, fps=None, dpi=None,
 def main(mode):
     if mode is None:
         mode = 'normal' # 'normal', 'pictures', 'movie', 'gif'
-    fixLim = True
     # # Definitions
     tail_length = 2 # 3
     fps = 15
@@ -267,11 +266,11 @@ def main(mode):
 
     # # Animation 
     f, ax = plt.subplots(1)
-    ax.axis('off')
+    # ax.axis('off')
     ax.set_aspect('equal')
     # Collect update-tasks
     tasks = taskCollector()
-    if fixLim:
+    if N == 1:
         fixedLimits(preys, ax)
     else:
         positions = [preys]
