@@ -18,27 +18,6 @@ import pickle
 if __name__ == '__main__':
     matplotlib.use('Agg')
 
-def mergeSimulations(params, outpath, paratuple):
-    p_out = Path(outpath)
-    dic = params.copy()
-    dic.pop('para_name2')
-    dirname = get_groupname(dic, paratuple)
-    f_h5 = p_out / ('out_' + dirname + '.h5')
-    pattern = 'out_{}_{}*.h5'.format(dirname, params['para_name2'])
-    f_splits = list(p_out.glob(pattern))
-    create_or_check_swarmdyn_hdf5(outpath, dirname, dic, verb=False)
-
-    with h5py.File(str(f_h5), 'r+') as h5f:
-        for f_split in f_splits:
-            with h5py.File(str(f_split), 'r+') as h5f_split:
-                n_datasets = gen.h5AllDatasetNames(h5f_split, verbose=False)
-                for n_dataset in n_datasets:
-                    d_name = '{}/{}'.format(dirname, n_dataset.split('/')[-1])
-                    data = h5f_split[n_dataset]
-                    gen.h5ExtendDataSet2(h5f, d_name, data, g_name=None)
-            f_split.unlink() # avoids redundant data
-
-
 def increaseDictValues(dic, inc):
     for key in dic.keys():
         dic[key] += inc
@@ -182,22 +161,6 @@ def h5CompareGrAttr2Dict(h5file, gname, dicce, verb=False):
         sys.exit()
 
 
-def existingSamplesH5(path, params):
-    path = Path(path)
-    dic = params.copy()  # to not modify original part
-    dic.pop('para_name2', None)
-    paratuple = [dic['para_values0'][0], dic['para_values1'][0]]
-    dirname = get_groupname(dic, paratuple)
-    f_h5 = path / ('out_' + dirname + '.h5')
-    existing_samples = 0
-    if f_h5.exists():
-        with h5py.File(str(f_h5), 'r+') as f:
-            n_dsets = gen.h5AllDatasetNames(f, verbose=False)
-            sizes = [f[dset].shape[0] for dset in n_dsets]
-            existing_samples = np.nanmax(sizes)
-    return int(existing_samples)
-
-
 def create_or_check_swarmdyn_hdf5(path, dirname, dic, verb=False):
     path = Path(path)
     f_h5 = str(path / ('out_' + dirname + '.h5'))
@@ -224,7 +187,9 @@ def create_or_check_swarmdyn_hdf5(path, dirname, dic, verb=False):
             print('PPK: try opening')
         with h5py.File(f_h5, 'r+') as f:
             h5CompareGrAttr2Dict(f, dirname, dic)
-            existing_samples = f['/' + dirname + '/swarm'].shape[0]
+            n_dsets = gen.h5AllDatasetNames(f, verbose=False)
+            sizes = [f[dset].shape[0] for dset in n_dsets]
+            existing_samples = np.nanmax(sizes)
     return existing_samples
 
 
@@ -259,6 +224,7 @@ def MultipleRunSwarmdyn(params, runs, paratuple, verb=False):
     sd.solve_parameter_dependencies(dic)
     path = dic['path']
     dic['fileID'] = dirname
+    existingRuns = 0
     if verb:
         print('Running {} runs for '.format(runs) + dirname)
         print(dic['path'])
@@ -270,8 +236,9 @@ def MultipleRunSwarmdyn(params, runs, paratuple, verb=False):
             os.mkdir(path)
             add = 0
     else:     # hdf5 output, file extended for new run
-        _ = create_or_check_swarmdyn_hdf5(path, dirname, dic)
+        existingRuns = create_or_check_swarmdyn_hdf5(path, dirname, dic)
 
+    runs = max(0, runs - existingRuns)
     t0 = pytime.time()
     for i in range(runs):
         if dic['out_h5'] == 0 and dic['output_mode'] != 2: # txt output, runs sorted in directories
@@ -287,13 +254,10 @@ def MultipleRunSwarmdyn(params, runs, paratuple, verb=False):
 
 
 def DoubleSimulationScan(params, runs=20,
-                         scantype='seq', no_processors=24, verb=None,
-                         useAllCores=None):
+                         scantype='seq', no_processors=24, verb=None):
     outpath = params['path']
     if verb is None:
         verb = False
-    if useAllCores is None:
-        useAllCores = False
     dic = params.copy()  # to not modify original part
     # ensure no redundant computation: also causing Bug in multiprocessing
     dic['para_values0'] = np.unique(dic['para_values0'])
@@ -304,65 +268,19 @@ def DoubleSimulationScan(params, runs=20,
         os.mkdir(outpath)
         checkRuns = False
     # check how many runs have already been done
-    # ATTENTION: assumes that Scan was finished -> 1 hdf5-file represents all
-    Nsplit = 1
-    if checkRuns:
-        existing_runs = existingSamplesH5(outpath, dic)
-        runs -= existing_runs
-        if runs <= 0:
-            return
     if (scantype == 'seq'):
         for p in dic['para_values0']:
             for q in dic['para_values1']:
                 MultipleRunSwarmdyn(dic, runs, [p, q])
     else:
-        no_processors, Nsplit = get_numOfProc(dic, no_processors, runs, Nsplit,
-                                              useAllCores=useAllCores)
         parallel_run_func = partial(MultipleRunSwarmdyn, dic,
                                     runs)
         comp_pool = mp.Pool(no_processors)
         para_values = get_scanTuples(dic)
         print(para_values)
         out = comp_pool.map(parallel_run_func, para_values, chunksize=1)   # para_values passed as tuple
-        # JOIN SPLITTED RESULTS 
-        if useAllCores and Nsplit > 1:
-            para_values = [vals[:-1] for vals in para_values]  # remove para_value2
-            para_values = np.unique(para_values, axis=0)
-            parallel_merge = partial(mergeSimulations, dic,
-                                     outpath)
-            _ = comp_pool.map(parallel_merge, para_values, chunksize=1)
-            # for paraTup in para_values:
-            #     _ = parallel_merge(paraTup)
         comp_pool.terminate()
     return
-
-
-def get_numOfProc(dic, no_processors, runs, Nsplit, useAllCores=False):
-    '''
-    returns number of processors for 2D-Scan needed
-    if useAllCores:
-        adds a dummy parameter value NAME and Values
-        to use all available cores
-        e.g. no_processors=30 BUT only 15 different parameter regions
-            -> split by 2
-    '''
-    NparaTuples = len(dic['para_values0']) * len(dic['para_values1'])
-    if(no_processors > NparaTuples):
-        no_processors = NparaTuples
-    if useAllCores:
-        Nsplit = int( no_processors / NparaTuples )
-        if(Nsplit > 1):
-            if Nsplit > runs: # if no splits are necessary to compute all runs -> NO split
-                pass
-            else:
-                no_processors = Nsplit * NparaTuples
-                dic['para_name2'] = 'Nsplit'
-                dic['para_values2'] = list(range(Nsplit))
-                runs /= Nsplit
-                if (runs % 1) > 0: # to ensure: runs * Nsplit >= runs_original
-                    runs = runs + 1
-                runs = int(runs)
-    return no_processors, Nsplit
 
 
 def get_scanTuples(dic):
@@ -401,8 +319,7 @@ def Scanner(params, scantype, no_processors, runs):
     # Run Simulation and Move Files
     ############################################################
     DoubleSimulationScan(params, runs=runs, scantype=scantype,
-                         no_processors=no_processors,
-                         useAllCores=True)
+                         no_processors=no_processors)
 
     t_end = pytime.time()
     print(outpath + ' finished in ', (t_end - t_start)/60, ' minutes')
@@ -463,7 +380,7 @@ if __name__ == '__main__':
     #Scan Values
     scantype = 'para'# 'para': parallel; 'seq':sequential (Better for debugging)
     no_processors = 37  # 66: for itb cluster, 40: for CHIPS
-    runs = 1   # 40 
+    runs = 3   # 40 
 
     # Simulation BASE-Parameter Values
     equi_time = 100
@@ -479,7 +396,7 @@ if __name__ == '__main__':
     para_changes['para_name0']   = rep * ['alg_strength']
     para_changes['para_values0'] = [np.arange(0, 2, step=0.025)]
     para_changes['para_name1'] = rep * ['beta']
-    para_changes['para_values1'] = rep * [1 * 2**np.arange(5, 6, step=1)]
+    para_changes['para_values1'] = rep * [1 * 2**np.arange(1, 7, step=1)]
     para_changes['Dphi'] = rep * [1]
     para_changes['dt'] = rep * [0.005]
     para_changes['output'] = rep * [1]
