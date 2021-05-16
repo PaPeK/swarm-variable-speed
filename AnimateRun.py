@@ -5,10 +5,22 @@ if __name__ == '__main__':
     matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib import animation
+from matplotlib import patches
 import h5py
 from pathlib import Path
 from functools import partial
 import pdb
+from acab import juteUtils as jut
+from optparse import OptionParser
+import os
+
+
+
+def pavas2colors(pavas):
+    colors = np.squeeze(pavas)
+    colors -= colors.min()
+    colors /= colors.max()
+    return colors
 
 
 def setDefault(x, val):
@@ -17,10 +29,10 @@ def setDefault(x, val):
     return x
 
 
-def fixedLimits(dat, ax):
+def fixedLimits(dat, ax, extra=0):
     pos = dat.dat.T
-    ax.set_xlim(np.nanmin(pos[0]), np.nanmax(pos[0]))
-    ax.set_ylim(np.nanmin(pos[1]), np.nanmax(pos[1]))
+    ax.set_xlim(np.nanmin(pos[0])-extra, np.nanmax(pos[0])+extra)
+    ax.set_ylim(np.nanmin(pos[1])-extra, np.nanmax(pos[1])+extra)
 
 
 def updateDelay(func):
@@ -237,7 +249,39 @@ def UpdateViaAnimation(fig, tasks, tmin, tmax, fps=None, dpi=None,
         plt.show()
 
 
-def main(mode):
+def UpdateViaDraw(fig, tasks, tmin, tmax, fps=None, dpi=None,
+                  mode=None, name=None, repeat=None):
+    '''
+    TODO: repeat is only dummy (ensure same parameters as UpdateViaAnimation)
+    '''
+    fps = setDefault(fps, 15)
+    dpi = setDefault(dpi, 300)
+    mode = setDefault(mode, 'normal')
+    name = setDefault(name, 'Animation')
+    plt.show(block=False) # necessary for normal
+    maxFps = 20 # this is system specific
+    interval = 1/fps - 1/maxFps
+    for s in range(tmin, tmax):
+        _ = tasks.update(s)
+        if(mode != 'movie'):
+            fig.canvas.draw()
+            if interval > 0:
+                sleep(interval)
+        if(mode != 'normal'):
+            fig.savefig('f%06d.jpg' % s, dpi=dpi)
+    if (mode == 'movie'):
+        com0 = 'mencoder mf://f*.jpg -mf fps={}:type=jpg'.format(fps)
+        com1 = ' -vf scale=-10:-1 -ovc x264 -x264encopts'
+        com2 = ' bitrate=4000 -o {}.mp4'.format(name)
+        os.system(com0+com1+com2)
+        os.system("rm f*.jpg")
+    elif(mode == 'gif'):
+        print('gif-representation not implemented')
+
+
+def main(mode=None, size=None):
+    if size is not None:
+        size = int(size)
     if mode is None:
         mode = 'normal' # 'normal', 'pictures', 'movie', 'gif'
     # # Definitions
@@ -246,7 +290,7 @@ def main(mode):
     dpi = 200
     sizePrey = 1/8
     name = 'Animation'
-    cmap = plt.get_cmap('coolwarm') # alternatives 'bwr', 'Reds'
+    cmap = plt.get_cmap('bwr') # alternatives 'bwr', 'Reds'
     folder = Path.cwd()
 
     # # Load data 
@@ -254,13 +298,26 @@ def main(mode):
     if f_h5.exists:
         with h5py.File(f_h5) as fh5:
             preys = datCollector( np.array(fh5['/part']), radius=sizePrey)
+            s = np.array(fh5['/part'][:, :, 2:4])
     else:
         print('{} does not EXIST'.format(f_h5))
+    # pdb.set_trace()
     pava_in_name = folder / 'pava_in_xx.in'
     colors = 'k'
     if pava_in_name.exists():
         pavas = np.loadtxt(str(pava_in_name))
         colors = pavas2colors(pavas)
+    # color from velocity
+    if False:
+        s = np.diff(preys.dat, axis=0)
+        s = np.sqrt(np.sum(s**2, axis=-1))
+        s = np.vstack((s, s[-1]))
+        s = jut.smooth2D(s, 1)
+        s = pavas2colors(s)
+        print(s.shape, s.min(), s.max())
+        colors = cmap(s)
+        print('colors.shape', colors.shape)
+        preys.colors = colors
     # get info from files
     time, N, _ = preys.dat.shape
 
@@ -270,25 +327,33 @@ def main(mode):
     ax.set_aspect('equal')
     # Collect update-tasks
     tasks = taskCollector()
-    if N == 1:
-        fixedLimits(preys, ax)
+    if N == 1 or size is not None:
+        fixedLimits(preys, ax, extra=2)
+        if size is not None:
+            rec = patches.Rectangle((0, 0), size, size, color='k', fill=False)
+            ax.add_artist(rec)
+    # elif size is not None:
+    #     mine, maxe = 0, size
+    #     if np.min(preys.dat) < 0:
+    #         mine, maxe = -size, size
+    #     ax.set_xlim(mine, maxe)
+    #     ax.set_ylim(mine, maxe)
     else:
         positions = [preys]
         tasks.append( Limits4Pos(positions, ax) )
     tasks.append( headAndTail(preys, ax) )
     # animation
-    UpdateViaAnimation(f, tasks, 0, time, fps=fps, repeat=False, mode=mode, name=name)
+    if mode == 'movie':
+        UpdateViaDraw(f, tasks, 0, time, fps=fps, repeat=False, mode=mode, name=name)
+    else:
+        UpdateViaAnimation(f, tasks, 0, time, fps=fps, repeat=False, mode=mode, name=name)
 
 
 if __name__ == '__main__':
-    main(None)
+    parser = OptionParser()
+    parser.add_option("-s", "--size", dest="size", default=None,
+                      help="size of area", metavar=float)
+    options, args = parser.parse_args()
+    main(None, size=options.size)
 
 
-def pavas2colors(pavas):
-    if np.std(pavas) > 1e-5:
-        colors = np.squeeze(pavas)
-        colors -= colors.min()
-        colors /= colors.max()
-    else:
-        colors = 'k'
-    return colors
