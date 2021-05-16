@@ -16,7 +16,6 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp, double rn
     double forcep = 0.0;
     double forcev = 0.0;
     std::vector<double> force(2, 0);
-    std::vector<double> hvec(2, 0);
     double lphi = 0.0;
     int BC = ptrSP->BC;
     double sizeL = ptrSP->sizeL;
@@ -37,14 +36,17 @@ void MoveParticle(particle &a, params * ptrSP, gsl_rng *r, double rnp, double rn
     // Calculate polar angle
     lphi = a.phi;
     double vproj = a.vproj;     // to use correct time-step
+
+
+    // forcev = a.force_rep[0] * cos(lphi) + a.force_rep[1] * sin(lphi);
     forcev = force[0] * cos(lphi) + force[1] * sin(lphi);
     a.vproj += (beta * (speed0 - a.vproj) + forcev) * dt;
     a.vproj += rnv;     // rnv = sqrt(dt * Dv) * N(0, 1)
     if (a.vproj < 0)     // prevents F of swimming back
         a.vproj = 0;    // angle adapted below to exactly the force direction
 
-    forcep =- force[0] * sin(lphi) + force[1] * cos(lphi);
 
+    forcep =- (force[0]) * sin(lphi) + force[1] * cos(lphi);
     if (a.vproj + turn_alpha != 0) // TODO: should be True also for small vproj (otherwise angle overshoot) -> what is small (depends on dt and force strength)
         lphi += ( forcep * dt + rnp) / (a.vproj + turn_alpha);  // rnp = sqrt(dt * Dphi) * N(0, 1) (Wiener Process) 
     else
@@ -99,51 +101,23 @@ void Boundary(agent &a, double sizeL,  int BC)
             if (a.x[0]>sizeL)
             {
                 a.x[0]=0.9999*sizeL;
-                if(a.v[1]>0.)
-                    tmpphi=(0.5+dphi)*M_PI;
-                else
-                    tmpphi=-(0.5+dphi)*M_PI;
-    
-                a.v[0]=cos(tmpphi);
-                a.v[1]=sin(tmpphi);
+                a.v[0]=0;
             }
             else if (a.x[0]<0)
             {
                 a.x[0]=0.0001;
-                if(a.v[1]>0.)
-                    tmpphi=(0.5-dphi)*M_PI;
-                else
-                    tmpphi=-(0.5-dphi)*M_PI;
-    
-    
-                a.v[0]=cos(tmpphi);
-                a.v[1]=sin(tmpphi);
+                a.v[0]=0;
             }
             if (a.x[1]>sizeL)
             {
                 a.x[1]=0.9999*sizeL;
-                if(a.v[0]>0.)
-                    tmpphi=-dphi;
-                else
-                    tmpphi=M_PI+dphi;
-    
-                a.v[0]=cos(tmpphi);
-                a.v[1]=sin(tmpphi);
-    
+                a.v[1] = 0;
             }
             else if (a.x[1]<0)
             {
                 a.x[1]=0.0001;
-                if(a.v[0]>0.)
-                    tmpphi=dphi;
-                else
-                    tmpphi=M_PI-dphi;
-    
-                a.v[0]=cos(tmpphi);
-                a.v[1]=sin(tmpphi);
+                a.v[1]=0;
             }
-    
-    
             break;
         case 2:
             // Elastic box boundary condition
@@ -155,8 +129,7 @@ void Boundary(agent &a, double sizeL,  int BC)
             }
             else if (a.x[0]<0)
             {
-                dx=2.*a.x[0];
-                a.x[0]-=dx;
+                a.x[0]*=-1.;
                 a.v[0]*=-1.;
             }
             if (a.x[1]>sizeL)
@@ -167,8 +140,7 @@ void Boundary(agent &a, double sizeL,  int BC)
             }
             else if (a.x[1]<0)
             {
-                dx=2.*a.x[1];
-                a.x[1]-=dx;
+                a.x[1]*=-1.;
                 a.v[1]*=-1.;
             }
             break;

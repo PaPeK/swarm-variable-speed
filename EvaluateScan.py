@@ -19,8 +19,86 @@ import importlib.util
 import pickle
 import Scan2D as s2d
 import general as gen
-from TsTools import TSPositionPlus as tspp    # needed for spatial_properties
+from TsTools import TSPosition as tsp    # needed for spatial_properties
 from pathlib import Path
+from numba import jit
+
+def GetParticleMeasures(datas, R0=None):
+    '''
+    INPUT:
+        datas.shape(samples, time, N, value)
+            with values
+    '''
+    if R0 is None:
+        R0 = 2
+    out_names = ['Corr_speed_op_local']
+    out_dic = s2d.names2dict(out_names)
+    in_dic = s2d.outDics().get_out_swarm_dict()
+    varis = len(out_names)
+
+    samples, time, N, varis = datas.shape
+    means = np.empty(varis) * np.nan
+    polLocs, sLocs = np.empty(0), np.empty(0)
+    for i, data in enumerate(datas):
+        t_end = getTEnd(data)
+        if t_end > 0:
+            dat = data[:t_end]
+            pos, vel = dat.T[:2].T, dat.T[2:4].T
+            phi = np.arctan2(vel.T[1].T, vel.T[0].T)
+            s = np.sqrt(np.sum(vel**2, axis=-1))
+            polLoc, sLoc = localValues(pos, phi, s, R0)
+            polLocs = np.append(polLocs, polLoc.flatten())
+            sLocs = np.append(sLocs, sLoc.flatten())
+    means[out_dic['Corr_speed_op_local']] = np.corrcoef(polLocs, sLocs)[0, 1]
+    return means, out_dic
+
+def localValues(pos, phi, s, R0):
+    '''
+    wrapper for "calculateLocalValues"
+    INPUT:
+        pos shape=[time, N, 2]
+        phi, s shape=[time, N]
+        R0 float
+    '''
+    ll_t, Npart = phi.shape
+    x, y = pos[:, :, 0], pos[:, :, 1]
+    return calculateLocalValues(ll_t, Npart, x, y, phi, s, R0)
+
+
+@jit
+def calculateLocalValues(ll_t, Npart, x, y, phi, s, R0):
+    '''
+    "Luis Alberto Gomez Nava"-code to compute local-order and -velocity
+    -modifications: before "local group-velocity" was computed instead of local speed
+    INPUT:
+        ll_t, Npart: ints
+            length of timeseries, particle number
+        x, y, phi, s: floats
+            position, heading angle, speed
+        R0: float
+            radius
+    '''
+    polLoc = np.zeros((ll_t, Npart))
+    vLoc   = np.zeros((ll_t, Npart))
+    for t in range(ll_t):
+        for i in range(Npart):
+            aux1, aux2  = 0.0, 0.0
+            aux3  = 0.0
+            N_nei = 0
+            for j in range(Npart):
+                dist = np.sqrt((x[t,j] - x[t,i])**2 + (y[t,j] - y[t,i])**2)
+                if (dist <= R0):
+                    # Local polarization
+                    aux1  = aux1 + np.cos(phi[t,j])
+                    aux2  = aux2 + np.sin(phi[t,j])
+                    # Local speed
+                    aux3  = aux3 + s[t,j]
+                    N_nei += 1
+            aux1, aux2 = aux1/N_nei, aux2/N_nei
+            aux3 = aux3/N_nei
+            polLoc[t,i] = np.sqrt(aux1**2 + aux2**2)
+            vLoc[t,i]   = aux3
+    return polLoc, vLoc
 
 
 def getTEnd(data):
@@ -66,7 +144,7 @@ def GetSimpleMeanStd(datas):
     return means, std
 
 
-def GetSwarmMeanStd(datas, pre=None):
+def GetSwarmMeanStd(datas):
     '''
     returns averages of combinations of values (Correlations, ...)
     and a dictionary with appropriate name for value
@@ -84,9 +162,6 @@ def GetSwarmMeanStd(datas, pre=None):
                  'Corr_speed_op'
                 ]
     out_dic = s2d.names2dict(out_names)
-    if datas is None:  # only need dictionary
-        out_dic = s2d.names2dict(out_names, pre)
-        return out_dic
     in_dic = s2d.outDics().get_out_swarm_dict()
     varis = len(out_names)
     # preparing averaging
@@ -112,7 +187,7 @@ def GetSwarmMeanStd(datas, pre=None):
             means[i, out_dic['Corr_speed_op']] = np.corrcoef(speed, order)[0, 1]
     means = gen.NanAverage(means, weights)
     stds = np.nanstd(means)
-    out_dic = s2d.names2dict(out_names, pre)
+    out_dic = s2d.names2dict(out_names)
     return means, stds, out_dic
 
 
@@ -208,6 +283,11 @@ def AnalyseDataH5(para, para_vals, verb=None, paraRun=None):
         out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
 
         means0, stds, out_dic0 = GetSwarmMeanStd(dset_swarm)
+        means = np.append(means, means0)
+        out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
+
+    if dset_part is not None:
+        means0, out_dic0 = GetParticleMeasures(dset_part)
         means = np.append(means, means0)
         out_dic = s2d.join_enumerated_dicts(out_dic, out_dic0)
 

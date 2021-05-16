@@ -22,6 +22,25 @@
 import numpy as np
 import os
 from pathlib import Path
+import general as gen
+import  __main__
+
+
+def reproducible(outpath):
+    # ensure reproducability
+    f_current = Path(os.path.realpath(__main__.__file__))
+    d_current = f_current.parent
+    gen.copyIfNeeded(str(d_current / 'src'), outpath)
+    gen.copyIfNeeded(str(d_current / 'swarmdyn'), outpath)
+    gen.copyIfNeeded(str(d_current / 'Makefile'), outpath)
+    gen.copyIfNeeded(str(d_current / 'SwarmDynByPy.py'), outpath)
+    gen.copyIfNeeded(str(d_current / 'general.py'), outpath)
+    gen.copyIfNeeded(str(f_current), outpath)
+    if 'RunSingle' in f_current.parts[-1]:
+        gen.copyIfNeeded(str(d_current / 'AnimateRun.py'), outpath)
+        f_animation = d_current / 'Animation.mp4'
+        if f_animation.exists():
+            gen.copyIfNeeded(str(f_animation), outpath)
 
 
 def get_base_params(record_time, trans_time=None):
@@ -51,7 +70,7 @@ def get_base_params(record_time, trans_time=None):
     params["size"] = 150
 
     # #################### F behavior
-    params["Dphi"] = 0.5    # angular noise (= variance/2) --> Pi^2/4=2.5 is very large
+    params["Dphi"] = 1    # angular noise (= variance/2) --> Pi^2/4=2.5 is very large
     params["Dv"] = 0.4      # speed noise (= variance/2) --> what is large?
     params["speed0"] = 1.0
     params["beta"] = 4

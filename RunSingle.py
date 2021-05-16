@@ -35,19 +35,24 @@ def main():
     #########################################
     dockerName = None # alternatively 'gcc_docker' or None see README.md for usage (Docker-alternative)
 
-    trans_time = 100 # 200
-    record_time = 40 # 1200
+    trans_time = 20 # 200
+    record_time = 50000 # 50000 # 120
 
+    outpath = ''
     dic = dict()
     dic = swarmPy.get_base_params(record_time, trans_time=trans_time)
     # changes from base-parameters
     dicC = dict()
-    dicC['N'] = 400
+    dicC['N'] = 1
     dicC['output_mode'] = 2
-    # dic['output'] = 0.2
-    dicC['beta'] = 0.4 # relaxation coefficient
-    dicC['alg_strength'] = 9.9 # the order-disorder transition is at alg_strength=0.83
-    # dicC['rep_strength'] = 2.26 # the order-disorder transition is at alg_strength=0.83
+    # dic['output'] = 20.2
+    # dicC['rep_strength'] = 0.0 # relaxation coefficient
+    # dicC['alg_strength'] = 0.0 # relaxation coefficient
+    dicC['beta'] = 0.5 # relaxation coefficient
+
+    # dicC['size'] = 100 # the order-disorder transition is at alg_strength=0.83
+    # dicC['BC'] = 1 # working: -1, 1, 5
+    # dicC['rep_strength'] = 10 # working: -1, 1, 5
     f_name = ''
     keys = sorted(list(dicC.keys()))
     for k in keys:
@@ -67,11 +72,22 @@ def main():
     dockerCall = ''
     if dockerName is not None:
         dockerCall = 'docker run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp {} '.format(dockerName)
-    os.system(dockerCall + 'make cl;')
-    os.system(dockerCall + command)
+    # os.system(dockerCall + 'make cl;')
+    # os.system(dockerCall + command)
     t1 = pytime.time()
     print(t1-t0)
-    AnimateRun.main(None)
+    size = None
+    if 'BC' in dicC.keys():
+        size = dicC['size']
+    AnimateRun.main(None, size=size)
+
+    # reproducible movies:
+    if False:
+        outpath = Path('/home/klamser/Seafile/PoSI_EmergentStructure/Data/Videos_simu/xso_BoundaryN400')
+        outpath = Path('/home/klamser/Seafile/PoSI_EmergentStructure/Data/SimuPPK/')
+        outpath /= f_name
+        swarmPy.reproducible(outpath)
+
     return
 
 if __name__ == '__main__':

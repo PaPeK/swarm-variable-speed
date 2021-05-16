@@ -304,13 +304,7 @@ def get_scanTuples(dic):
 def Scanner(params, scantype, no_processors, runs):
     outpath = params['path']
     # ensure reproducability
-    f_current = Path(os.path.realpath(__file__))
-    d_current = f_current.parent
-    gen.copyIfNeeded(str(d_current / 'src'), outpath)
-    gen.copyIfNeeded(str(d_current / 'swarmdyn'), outpath)
-    gen.copyIfNeeded(str(d_current / 'Makefile'), outpath)
-    gen.copyIfNeeded(str(d_current / 'SwarmDynByPy.py'), outpath)
-    gen.copyIfNeeded(str(f_current), outpath)
+    sd.reproducible(outpath)
 
     t_start = pytime.time()
     # params used:
@@ -379,33 +373,33 @@ if __name__ == '__main__':
     t0 = pytime.time()
     #Scan Values
     scantype = 'para'# 'para': parallel; 'seq':sequential (Better for debugging)
-    no_processors = 37  # 66: for itb cluster, 40: for CHIPS
-    runs = 3   # 40 
+    no_processors = 35  # 66: for itb cluster, 40: for CHIPS
+    runs = 20   # 40 
 
     # Simulation BASE-Parameter Values
     equi_time = 100
-    record_time = 100
+    record_time = 300
     # AllOptiModes = ['WithAlphaSimplestI', 'WithAlphaSimplestII', 'WithAlphaAsPNAS']
     errOrder = False
 
     para_changes = dict()
     base_para = sd.get_base_params(record_time, trans_time=equi_time)
     rep = 1 # repeat: create the correct length of lists
-    base_para['output_mode'] = 0 # output: 0=only mean, 1=mean+particle, 2=only particle
+    base_para['output_mode'] = 1 # output: 0=only mean, 1=mean+particle, 2=only particle
     # non-explorativ: parameters based on fitting and optimization
-    para_changes['para_name0']   = rep * ['alg_strength']
-    para_changes['para_values0'] = [np.arange(0, 2, step=0.025)]
+    para_changes['para_name0']   = rep * ['N']
+    ra0 = np.arange(1, 9, step=1)
+    ra1 = 2**np.arange(0, 8, step=1)
+    para_changes['para_values0'] = rep * [np.unique(np.append(ra0, ra1))]
     para_changes['para_name1'] = rep * ['beta']
-    para_changes['para_values1'] = rep * [1 * 2**np.arange(1, 7, step=1)]
-    para_changes['Dphi'] = rep * [1]
-    para_changes['dt'] = rep * [0.005]
-    para_changes['output'] = rep * [1]
-    # para_changes['alg_strength'] = rep * [0.25]
-    # para_changes['turn_alpha'] = rep * [1]
+    para_changes['para_values1'] = rep * [0.025 * 2**np.arange(9, step=0.25)]
+    para_changes['speed0'] = rep * [2]
+    # para_changes['BC'] = rep * [1]
+    para_changes['dt'] = rep * [0.002]
 
     # OUTPATH-name
     # d_save = Path(os.path.realpath(__file__)).parent
-    d_extra = 'Out_OP/Finer'
+    d_extra = 'Out_S__2D_Beta_N'
     d_save = Path('/home/klamser/Seafile/PoSI_EmergentStructure/Data/SimuPPK')
     d_save = Path('/mnt/data3/PoSI_VariableSpeed/') / d_extra
     d_save.mkdir(exist_ok=True)
@@ -419,7 +413,7 @@ if __name__ == '__main__':
         para_changes['path'].append(str(d_save / f_name))
     outpaths = para_changes['path']
     # BELOW para_cahnges are not part of the name
-    para_changes['motivation'] = ['PHT for different beta AND dt=0.005 (because beta up to 16).']
+    para_changes['motivation'] = ['Check if the transition at N=4 also exists for alg_strength=0!']
 
     # create Data:
     run_func4list(Scanner, outpaths, base_para, para_changes,
