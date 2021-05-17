@@ -115,13 +115,9 @@ The following parts exists (sorted according their "conceptual importance"):
     * `agents_interact.cpp`
     * `social_forces.cpp`
     * `agents_operation.cpp`
-* tools: hdf5 writing, maths, raycasting (for visual field ... actually not needed):
+* tools: hdf5 writing, maths
     * `h5tools.cpp`
     * `mathtools.cpp`
-    * raycasting (based on Colin Twomey raycasting-repository: fovea link??):
-        * `fov.cpp`
-        * `geometry.cpp`
-        * `ray_casting.cpp`
 
 ### Hard coded peculiarities
 
