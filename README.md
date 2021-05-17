@@ -21,22 +21,6 @@ next to standard C libraries the following libraries need to be installed via ``
 - libgsl-dev
 - libcgal-dev
 
-### Docker-alternative
-
-The ```Dockerfile``` contains the build instruction for an image
-which can be used to run the c++ code. In this case the above libraries do not need to be installed.
-For building the docker:
-
-- install docker following https://docs.docker.com/engine/install/.
-- build the image by running 
-```
-docker build -t gcc_docker .
-```
-    in the directory of this git-repository
-    - note that `gcc\_docker` is an arbitrary name for the image and can be chose freely
-- check if the image exists by running `docker images` ("gcc_docker" should be listed)
-- change in "RunSingle.py" the line `dockerName = None` to `dockerName = 'gcc_docker'`
-
 ## Required python packages
 
 The code runs in the anaconda environment specified in `environment.yml` which can be created from the projects root directory via
@@ -72,14 +56,6 @@ A simple work around is to comment in your `~/.bashrc` (or `~/.shrc` or `~/.zshr
 Than you start a new terminal and retry the compilation (run `make`).
 If the compilation was succesfull you can uncomment the anaconda initialization again and run the python-scripts.
 
-### Docker-alternative
-
-run in the directory of this repository (assuming you followed the instructions above and called the docker image "gcc_docker" )
-
-```
-docker run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp gcc_docker make
-```
-
 ## Running
 
 After successful compilation the executable file swarmdyn will be generated.
@@ -95,10 +71,6 @@ python RunSingle.py
 RunSingle.py will also call a visualization of the simulations by calling:
 
 - AnimateRun.py - animating the results using pythons matplotlib
-
-### Docker-alternative
-
-Remember to change in "RunSingle.py" the line `dockerName = None` to `dockerName = 'gcc_docker'` (or the docker-name you have chosen)
 
 ## User Agreement
 

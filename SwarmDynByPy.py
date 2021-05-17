@@ -73,7 +73,7 @@ def get_base_params(record_time, trans_time=None):
     params["Dphi"] = 1    # angular noise (= variance/2) --> Pi^2/4=2.5 is very large
     params["Dv"] = 0.4      # speed noise (= variance/2) --> what is large?
     params["speed0"] = 1.0
-    params["beta"] = 4
+    params["beta"] = 0.2
     params["rep_range"] = 1
     params["rep_strength"] = 2.0 # 20. (voro)
     params["rep_steepness"] = -2    # for rep_range = 1 steepness should be between [-4, -2]

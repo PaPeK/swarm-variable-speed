@@ -33,26 +33,17 @@ from pathlib import Path
 def main():
     # Input Parameters
     #########################################
-    dockerName = None # alternatively 'gcc_docker' or None see README.md for usage (Docker-alternative)
 
-    trans_time = 20 # 200
-    record_time = 50000 # 50000 # 120
+    trans_time = 20
+    record_time =  120
 
     outpath = ''
     dic = dict()
     dic = swarmPy.get_base_params(record_time, trans_time=trans_time)
     # changes from base-parameters
     dicC = dict()
-    dicC['N'] = 1
-    dicC['output_mode'] = 2
-    # dic['output'] = 20.2
-    # dicC['rep_strength'] = 0.0 # relaxation coefficient
-    # dicC['alg_strength'] = 0.0 # relaxation coefficient
-    dicC['beta'] = 0.5 # relaxation coefficient
-
-    # dicC['size'] = 100 # the order-disorder transition is at alg_strength=0.83
-    # dicC['BC'] = 1 # working: -1, 1, 5
-    # dicC['rep_strength'] = 10 # working: -1, 1, 5
+    dicC['N'] = 400
+    dicC['beta'] = 2 # relaxation coefficient
     f_name = ''
     keys = sorted(list(dicC.keys()))
     for k in keys:
@@ -69,11 +60,8 @@ def main():
     command = swarmPy.dic2swarmdyn_command(dic)
     print(command)
     t0 = pytime.time()
-    dockerCall = ''
-    if dockerName is not None:
-        dockerCall = 'docker run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp {} '.format(dockerName)
-    # os.system(dockerCall + 'make cl;')
-    # os.system(dockerCall + command)
+    os.system('make cl;')
+    os.system(command)
     t1 = pytime.time()
     print(t1-t0)
     size = None
