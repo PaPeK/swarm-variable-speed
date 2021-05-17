@@ -4,7 +4,7 @@ described and applied in ARXIV-MISSING
 
 (Python-wrapper package calling c++ running)
 
-[Github](https://github.com/PaPeK/swarm_variable_speed)
+[Github](https://github.com/PaPeK/swarm-variable-speed)
 
 ## General Notes
 
