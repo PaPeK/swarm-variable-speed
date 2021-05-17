@@ -1,17 +1,18 @@
-# PredatorPrey – simulation code for agent-based predator-prey interactions
-Version 0.1 described and applied in <http://arxiv.org/abs/2009.02079>
+# swarm-variable-speed – simulation code for agent-based collective movement with variable speed
+described and applied in ARXIV-MISSING
 
 
 (Python-wrapper package calling c++ running)
 
-[Github](https://github.com/PaPeK/predatorPrey)
+[Github](https://github.com/PaPeK/swarm_variable_speed)
 
 ## General Notes
 
-PredatorPrey is a C++ code which runs numerical simulations of the agent based stochastic differential equations.
+Swarm-variable-speed is a C++ code which runs numerical simulations of the agent based stochastic differential equations.
 The motivation of this code are group living animals, e.g. fish shoals in shallow water(2 dimensions).
+Importantly, fundamental kinematics as inertia and rotational friction are hard coded.
 In principle the code can be easily extended to three dimensions. However, the higher the dimension the smaller the volume if the number of agents stays constant.
-For a full mathematical description of the stochastic differential equations and the social forces (repulsion, attraction and alignment) see <http://arxiv.org/abs/2009.02079>. 
+For a full mathematical description of the stochastic differential equations and the social forces (repulsion, attraction and alignment) see ARXIV-MISSING. 
 
 ## Required C++ libraries:
 
@@ -74,11 +75,11 @@ RunSingle.py will also call a visualization of the simulations by calling:
 
 ## User Agreement
 
-By downloading PredatorPrey you agree with the following points: PredatorPrey is provided without any warranty or conditions of any kind. We assume no responsibility for errors or omissions in the results and interpretations following from application of PredatorPrey.
+By downloading swarm-variable-speed you agree with the following points: swarm-variable-speed is provided without any warranty or conditions of any kind. We assume no responsibility for errors or omissions in the results and interpretations following from application of swarm-variable-speed.
 
 ## License
 
-Copyright (C) 2016-2020 Pascal Klamser, Pawel Romanczuk
+Copyright (C) 2016-2021 Pascal Klamser, Pawel Romanczuk
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

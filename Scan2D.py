@@ -394,8 +394,6 @@ if __name__ == '__main__':
     para_changes['para_name1'] = rep * ['beta']
     para_changes['para_values1'] = rep * [0.025 * 2**np.arange(9, step=0.25)]
     para_changes['speed0'] = rep * [2]
-    # para_changes['BC'] = rep * [1]
-    para_changes['dt'] = rep * [0.002]
 
     # OUTPATH-name
     # d_save = Path(os.path.realpath(__file__)).parent
