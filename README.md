@@ -1,5 +1,5 @@
 # swarm-variable-speed – simulation code for agent-based collective movement with variable speed
-described and applied in ARXIV-MISSING
+described and applied in [arxiv](https://arxiv.org/abs/2106.00959)
 
 
 (Python-wrapper package calling c++ running)
@@ -16,11 +16,18 @@ For a full mathematical description of the stochastic differential equations and
 
 ## Required C++ libraries:
 
+### LINUX
 next to standard C libraries the following libraries need to be installed via ``apt-get install``'
 
 - libhdf5-serial-dev
 - libgsl-dev
 - libcgal-dev
+### MAC 
+the needed libraries can be installed via homebrew:
+
+- brew install hdf5 
+- brew install gsl
+- brew install cgal
 
 ## Required python packages
 
