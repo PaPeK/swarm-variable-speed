@@ -7,13 +7,49 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib import patches
 import h5py
+import pandas as pd
 from pathlib import Path
 from functools import partial
-import pdb
-from acab import juteUtils as jut
 from optparse import OptionParser
 import os
 
+
+def smooth2D(dat, std, min_periods=None, smotype=None):
+    '''
+    only wrapper for smooth1D for 2 dimensions
+    -> see smooth1D for details
+    '''
+    assert len(dat.shape) == 2, 'data has wrong dimension'
+    smodat = np.empty(dat.shape, dtype=float)
+    for i, da in enumerate(dat.T):
+        smodat[:, i] = smooth1D(da, std, min_periods=min_periods,
+                                smotype=smotype)
+    return smodat
+
+
+def smooth1D(dat, std=1, window=None, min_periods=1, smotype='gaussian'):
+    '''
+    INPUT:
+        dat.shape(T)
+        std double
+            - standard deviation of gaussian kernel used
+            - if window=None: int(6*std) = window size
+        window int
+            number of datapoints in a moving window
+        min_periods int
+            - minimum # of datapoints in window
+            - if less data than min_periods -> None
+        smotype string
+            up to now only 'gaussian' is implemented
+    '''
+    if window is None:
+        window = int(np.round(6*std))
+    # use pandas to smooth
+    smodat = pd.Series(dat)
+    smodat = smodat.rolling(window=window, win_type=smotype,
+                            center=True, min_periods=int(np.round(min_periods))
+                            ).mean(std=std)
+    return smodat
 
 
 def pavas2colors(pavas):
@@ -52,14 +88,14 @@ def updateDelay(func):
             return func(selfi, s)
         else:
             return dum(selfi, s)
-    return inner 
+    return inner
 
 
 class datCollector:
     '''
     cleans the data by setting data to nan if only contains 0's
         nans are not plotted
-    - collects also properties relevant for plotting/animation 
+    - collects also properties relevant for plotting/animation
         (delay, tail_length, colors)
     INPUT:
         dat.shape(T, N, M)
@@ -170,7 +206,7 @@ class Limits4Pos:
     def __init__(self, positions, ax):
         '''
         Assumes that the start-positions can be different
-        but all end synchrounously 
+        but all end synchrounously
         INPUT:
             positions [posA, posB, ....]
                 list of datCollector objects
@@ -293,7 +329,7 @@ def main(mode=None, size=None):
     cmap = plt.get_cmap('bwr') # alternatives 'bwr', 'Reds'
     folder = Path.cwd()
 
-    # # Load data 
+    # # Load data
     f_h5 = folder / 'out_xx.h5'
     if f_h5.exists:
         with h5py.File(f_h5) as fh5:
@@ -312,7 +348,7 @@ def main(mode=None, size=None):
         s = np.diff(preys.dat, axis=0)
         s = np.sqrt(np.sum(s**2, axis=-1))
         s = np.vstack((s, s[-1]))
-        s = jut.smooth2D(s, 1)
+        s = smooth2D(s, 1)
         s = pavas2colors(s)
         print(s.shape, s.min(), s.max())
         colors = cmap(s)
@@ -321,7 +357,7 @@ def main(mode=None, size=None):
     # get info from files
     time, N, _ = preys.dat.shape
 
-    # # Animation 
+    # # Animation
     f, ax = plt.subplots(1)
     # ax.axis('off')
     ax.set_aspect('equal')
@@ -355,5 +391,3 @@ if __name__ == '__main__':
                       help="size of area", metavar=float)
     options, args = parser.parse_args()
     main(None, size=options.size)
-
-
