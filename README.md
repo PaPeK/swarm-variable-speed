@@ -61,8 +61,14 @@ in the terminal in the directory of this repository.
 
 If you are using anaconda and h5py is installed the linking to the libhdf5-serial-dev library might not work.
 A simple work around is to comment in your `~/.bashrc` (or `~/.shrc` or `~/.zshrc` depending on the shell you are using) the anaconda initialization.
-Than you start a new terminal and retry the compilation (run `make`).
+Than you start a new terminal and retry the compilation (run `make`). You can check that not the anaconda python is used via `which python`.
 If the compilation was succesfull you can uncomment the anaconda initialization again and run the python-scripts.
+
+LINUX-cgal linking problem
+
+in older distributions of ubuntu (e.g. 16.04) CGAL needs to be explicitly linked in the `Makefile` (however, in current version this links hinders succesfull linking during compilation).
+If you are in an older distribution try to uncomment `-lCGAL` in the `Makefile`.
+
 
 ## Running
 

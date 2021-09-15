@@ -18,7 +18,7 @@ CXXFLAGS	= -O3 -Wall -std=c++14
 LINKER	= h5c++
 LFLAGS	= -lgsl -lgslcblas -lm -lgmp -lboost_system
 ifeq ($(OS), Linux)
-	LFLAGS	+= -lCGAL -lboost_thread
+	LFLAGS	+= -lboost_thread # -lCGAL 
 endif
 ifeq ($(OS), Darwin)
 	LFLAGS	+= -lboost_thread-mt
